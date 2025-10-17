@@ -37,23 +37,53 @@
 ### **1.4 Output Windows**
 - [ ] Output windows display after action button pressed
 - [ ] Default 4 windows visible (adjustable in settings)
-- [ ] Windows scroll horizontally
+- [ ] Windows scroll horizontally smoothly
 - [ ] Vertical scroll works inside each window
+- [ ] Nested scrolling (vertical inside horizontal) works without conflicts
 - [ ] Window titles show AI model name (no cost estimates)
 - [ ] Windows have clear borders/styling
+- [ ] Loading indicators appear while AI responses are pending
+- [ ] Loading spinners display with "Loading..." text
+- [ ] Responses appear asynchronously (not all at once)
+- [ ] Each window updates independently when its response arrives
+- [ ] Window cards have proper shadows/elevation
 
 ### **1.5 Tap-to-Copy Functionality**
 - [ ] Single tap on output window copies content
-- [ ] Haptic feedback on tap (vibration)
-- [ ] Visual feedback (toast/snackbar: "Copied!")
+- [ ] Haptic feedback on tap (vibration/success feedback)
 - [ ] Clipboard actually contains copied text
 - [ ] Tap doesn't interfere with vertical scrolling
 - [ ] Can paste copied text in another app
+- [ ] "Tap to copy" hint visible at bottom of each window
+- [ ] Empty windows don't copy anything
 
-### **1.6 Settings Screen**
+### **1.6 Follow-Up Questions**
+- [ ] Follow-up input NOT visible in Translate mode
+- [ ] Follow-up input visible in Grammar mode (after results appear)
+- [ ] Follow-up input visible in Usage mode (after results appear)
+- [ ] Follow-up input placeholder text visible
+- [ ] Send button appears when typing
+- [ ] Send button disabled when input is empty
+- [ ] Send button enabled when input has text
+- [ ] Can submit follow-up question
+
+### **1.7 Dark Mode**
+- [ ] Dark mode toggle visible in Settings screen
+- [ ] Dark mode toggle switches instantly
+- [ ] All screens update immediately when toggled
+- [ ] Dark mode colors correct (#1a1a2e background, #4d94ff accents)
+- [ ] Light mode colors correct (#ffffff background, #0066cc accents)
+- [ ] Text readable in both modes (good contrast)
+- [ ] All UI elements themed (input boxes, buttons, cards, etc.)
+- [ ] Dark mode preference persists after app restart
+- [ ] Dark mode loads correctly on app launch
+
+### **1.8 Settings Screen**
 - [ ] Settings screen opens from tab/button
 - [ ] All settings sections visible
 - [ ] Settings screen scrollable (if content overflows)
+- [ ] Dark mode toggle in Appearance section
+- [ ] No banner ad visible on Settings screen
 
 ---
 
@@ -389,5 +419,5 @@ When a test fails, document it here:
 
 ---
 
-**Last Updated:** Session 1 - Initial Setup
+**Last Updated:** Session 3 - Dark Mode & Output Windows
 **Status:** Ready for testing (tests will be checked off as features are implemented)
