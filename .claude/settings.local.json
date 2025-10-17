@@ -10,7 +10,16 @@
       "Bash(eas project:init:*)",
       "Bash(git init:*)",
       "Bash(git check-ignore:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit - Phase 0 & Setup Complete\n\n- Project documentation (rules, plan, changelog, test plan, guides)\n- Expo project initialized (translation-comparator-app)\n- React Native with Expo SDK 54\n- Firebase configuration (Auth + Firestore)\n- AdMob integration configured\n- EAS Build setup with local keystore method\n- 25 languages supported\n- 8 AI API providers configured\n- Project structure created (screens, components, services, contexts)\n- .gitignore protecting API keys and sensitive files\n\nPackage: com.berkaykan.translationcomparator\nPlatform: Android (iOS later)\nEAS Project: a8ffd364-be4b-4016-a97b-7f2db65fee5a\n\n🤖 Generated with Claude Code (https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(Stop-Process -Id 17340 -Force)",
+      "Bash(npx expo start:*)"
     ],
     "deny": [],
     "ask": []
