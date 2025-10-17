@@ -9,10 +9,20 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
+import { callAllModels, getEnabledModels } from '../services/aiService';
+import { buildTranslationPrompt } from '../utils/promptBuilder';
+
+// Language mapping
+const LANGUAGE_NAMES = {
+  es: 'Spanish',
+  fr: 'French',
+  tr: 'Turkish',
+};
 
 export default function TranslateScreen() {
   const [inputText, setInputText] = useState('');
@@ -21,50 +31,49 @@ export default function TranslateScreen() {
   const { theme } = useTheme();
   const styles = createCommonStyles(theme);
 
-  const handleTranslate = () => {
-    // TODO: Call AI services asynchronously
+  const handleTranslate = async () => {
+    // Validation
+    if (!inputText.trim()) {
+      Alert.alert('Error', 'Please enter some text to translate');
+      return;
+    }
+
     console.log('Translating:', inputText, 'to', selectedLanguage);
 
-    // Mock data for demonstration (will be replaced with real API calls in Phase 2)
-    setOutputs([
-      { modelName: 'GPT-4.1', text: null, loading: true },
-      { modelName: 'Claude Haiku 3.5', text: null, loading: true },
-      { modelName: 'Gemini 2.5 Flash', text: null, loading: true },
-      { modelName: 'Mistral', text: null, loading: true },
-    ]);
+    // Get enabled models
+    const enabledModels = getEnabledModels();
 
-    // Simulate API responses arriving at different times
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[0] = { modelName: 'GPT-4.1', text: 'Hola, ¿cómo estás? (GPT-4.1 translation)', loading: false };
-        return newOutputs;
-      });
-    }, 1000);
+    // Initialize outputs with loading state
+    const initialOutputs = enabledModels.map((model) => ({
+      modelId: model.id,
+      modelName: model.name,
+      text: null,
+      loading: true,
+    }));
+    setOutputs(initialOutputs);
 
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[1] = { modelName: 'Claude Haiku 3.5', text: 'Hola, ¿cómo estás? (Claude translation)', loading: false };
-        return newOutputs;
-      });
-    }, 1500);
+    // Build prompt
+    const targetLanguage = LANGUAGE_NAMES[selectedLanguage];
+    const prompt = buildTranslationPrompt(inputText, 'English', targetLanguage);
 
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[2] = { modelName: 'Gemini 2.5 Flash', text: 'Hola, ¿cómo estás? (Gemini translation)', loading: false };
-        return newOutputs;
-      });
-    }, 2000);
-
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[3] = { modelName: 'Mistral', text: 'Hola, ¿cómo estás? (Mistral translation)', loading: false };
-        return newOutputs;
-      });
-    }, 2500);
+    // Call all models asynchronously
+    await callAllModels(
+      prompt,
+      (modelId, modelName, response, error) => {
+        setOutputs((prevOutputs) => {
+          return prevOutputs.map((output) => {
+            if (output.modelId === modelId) {
+              return {
+                ...output,
+                text: error ? `Error: ${error.message}` : response,
+                loading: false,
+              };
+            }
+            return output;
+          });
+        });
+      }
+    );
   };
 
   return (

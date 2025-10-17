@@ -10,10 +10,13 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
+import { callAllModels, getEnabledModels, callSingleModel } from '../services/aiService';
+import { buildGrammarPrompt, buildFollowUpPrompt } from '../utils/promptBuilder';
 
 export default function GrammarScreen() {
   const [inputText, setInputText] = useState('');
@@ -21,55 +24,108 @@ export default function GrammarScreen() {
   const { theme } = useTheme();
   const styles = createCommonStyles(theme);
 
-  const handleCheckGrammar = () => {
-    // TODO: Call AI services asynchronously
+  const handleCheckGrammar = async () => {
+    // Validation
+    if (!inputText.trim()) {
+      Alert.alert('Error', 'Please enter some text to check');
+      return;
+    }
+
     console.log('Checking grammar:', inputText);
 
-    // Mock data for demonstration (will be replaced with real API calls in Phase 2)
-    setOutputs([
-      { modelName: 'GPT-4.1', text: null, loading: true },
-      { modelName: 'Claude Haiku 3.5', text: null, loading: true },
-      { modelName: 'Gemini 2.5 Flash', text: null, loading: true },
-      { modelName: 'Mistral', text: null, loading: true },
-    ]);
+    // Get enabled models
+    const enabledModels = getEnabledModels();
 
-    // Simulate API responses arriving at different times
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[0] = { modelName: 'GPT-4.1', text: 'The grammar is correct. The sentence is properly structured with subject-verb agreement. (GPT-4.1 analysis)', loading: false };
-        return newOutputs;
-      });
-    }, 1000);
+    // Initialize outputs with loading state
+    const initialOutputs = enabledModels.map((model) => ({
+      modelId: model.id,
+      modelName: model.name,
+      text: null,
+      loading: true,
+      originalPrompt: null,
+    }));
+    setOutputs(initialOutputs);
 
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[1] = { modelName: 'Claude Haiku 3.5', text: 'Grammar check: The sentence is grammatically correct. No errors found. (Claude analysis)', loading: false };
-        return newOutputs;
-      });
-    }, 1500);
+    // Build prompt (assuming English as source language for now)
+    const prompt = buildGrammarPrompt(inputText, 'English', 'English');
 
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[2] = { modelName: 'Gemini 2.5 Flash', text: 'Your grammar looks good! The sentence follows proper English grammar rules. (Gemini analysis)', loading: false };
-        return newOutputs;
-      });
-    }, 2000);
-
-    setTimeout(() => {
-      setOutputs(prev => {
-        const newOutputs = [...prev];
-        newOutputs[3] = { modelName: 'Mistral', text: 'No grammatical errors detected. The sentence is well-formed. (Mistral analysis)', loading: false };
-        return newOutputs;
-      });
-    }, 2500);
+    // Call all models asynchronously
+    await callAllModels(
+      prompt,
+      (modelId, modelName, response, error) => {
+        setOutputs((prevOutputs) => {
+          return prevOutputs.map((output) => {
+            if (output.modelId === modelId) {
+              return {
+                ...output,
+                text: error ? `Error: ${error.message}` : response,
+                loading: false,
+                originalPrompt: prompt,
+              };
+            }
+            return output;
+          });
+        });
+      }
+    );
   };
 
-  const handleFollowUpSubmit = (question, modelId) => {
+  const handleFollowUpSubmit = async (question, modelId) => {
     console.log('Follow-up question for', modelId, ':', question);
-    // TODO: Send follow-up question to specific AI model
+
+    // Find the output for this model
+    const output = outputs.find((o) => o.modelId === modelId);
+    if (!output || !output.text || !output.originalPrompt) {
+      Alert.alert('Error', 'Cannot send follow-up question');
+      return;
+    }
+
+    // Build follow-up prompt
+    const followUpPromptText = buildFollowUpPrompt(
+      output.originalPrompt,
+      output.text,
+      question
+    );
+
+    // Update this specific output to loading state
+    setOutputs((prevOutputs) => {
+      return prevOutputs.map((o) => {
+        if (o.modelId === modelId) {
+          return { ...o, loading: true };
+        }
+        return o;
+      });
+    });
+
+    // Call only this model with the follow-up prompt
+    try {
+      const response = await callSingleModel(modelId, followUpPromptText);
+      setOutputs((prevOutputs) => {
+        return prevOutputs.map((o) => {
+          if (o.modelId === modelId) {
+            return {
+              ...o,
+              text: response,
+              loading: false,
+            };
+          }
+          return o;
+        });
+      });
+    } catch (error) {
+      setOutputs((prevOutputs) => {
+        return prevOutputs.map((o) => {
+          if (o.modelId === modelId) {
+            return {
+              ...o,
+              text: `Error: ${error.message}`,
+              loading: false,
+            };
+          }
+          return o;
+        });
+      });
+    }
   };
 
   return (

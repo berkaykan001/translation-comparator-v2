@@ -1,7 +1,7 @@
 // Settings screen
 // User preferences, account management, subscription status
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,27 @@ import {
   Switch,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { AI_MODELS } from '../services/aiService';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
+
+  // State for AI model toggles (will be connected to context later)
+  const [modelStates, setModelStates] = useState(
+    AI_MODELS.reduce((acc, model) => {
+      acc[model.id] = model.enabled;
+      return acc;
+    }, {})
+  );
+
+  const toggleModel = (modelId) => {
+    setModelStates((prev) => ({
+      ...prev,
+      [modelId]: !prev[modelId],
+    }));
+    // TODO: Update global state/context
+    console.log(`Toggled ${modelId} to ${!modelStates[modelId]}`);
+  };
 
   const styles = createStyles(theme);
 
@@ -59,6 +77,25 @@ export default function SettingsScreen() {
             <Text style={styles.settingLabel}>Target Languages</Text>
             <Text style={styles.settingValue}>Spanish, French, Turkish</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* AI Models Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>AI Models</Text>
+          <Text style={styles.sectionDescription}>
+            Select which AI models to use for translations and analysis
+          </Text>
+          {AI_MODELS.map((model) => (
+            <View key={model.id} style={styles.settingItem}>
+              <Text style={styles.settingLabel}>{model.name}</Text>
+              <Switch
+                value={modelStates[model.id]}
+                onValueChange={() => toggleModel(model.id)}
+                trackColor={{ false: '#767577', true: theme.primary }}
+                thumbColor={modelStates[model.id] ? '#f4f3f4' : '#f4f3f4'}
+              />
+            </View>
+          ))}
         </View>
 
         {/* Output Configuration */}
@@ -127,6 +164,14 @@ const createStyles = (theme) => StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     backgroundColor: theme.backgroundSecondary,
+  },
+  sectionDescription: {
+    fontSize: 13,
+    color: theme.textSecondary,
+    paddingHorizontal: 15,
+    paddingTop: 5,
+    paddingBottom: 10,
+    fontStyle: 'italic',
   },
   settingItem: {
     flexDirection: 'row',

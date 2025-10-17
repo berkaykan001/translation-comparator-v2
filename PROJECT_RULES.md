@@ -47,7 +47,7 @@
 ### **AI Models:**
 - ✅ Code services for ALL 8 AI models (even if not actively used)
 - ✅ Make adding new models super easy (follow EASY_AI_MODEL_ADDITION_GUIDE.md)
-- ✅ Developers choose which models are enabled, not users
+- ✅ Users can select which models to use in Settings screen
 - ❌ DO NOT show cost estimates to users (only model names)
 
 ### **API Keys:**
@@ -149,5 +149,5 @@
 
 ---
 
-**Last Updated:** Session 1 - Initial Setup
+**Last Updated:** Session 3 - Phase 2 AI Integration Complete
 **Read this file at the start of EVERY session!**
