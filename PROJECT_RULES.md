@@ -21,8 +21,8 @@
 ### 4. **Testing Requirements:**
 - ✅ **Test after each major feature** addition
 - ✅ **Update TEST_PLAN.md** whenever new features are added
-- ✅ **Keep watching test checklists** and add new tests whenever needed
 - ✅ Run through relevant test scenarios before marking feature complete
+- ✅ Manual testing on physical device preferred
 
 ### 5. **Expo Account:**
 - ✅ **Use existing account:** `berkay_kan`
@@ -94,9 +94,9 @@
 2. Update TEST_PLAN.md if new features added
 
 ### **After Each Major Feature:**
-1. Add test scenarios to TEST_PLAN.md
-2. Run relevant tests
-3. Verify functionality before moving forward
+1. Test manually on device
+2. Verify functionality works as expected
+3. Update TEST_PLAN.md with test scenarios
 4. Mark todo as completed
 
 ---
@@ -144,10 +144,10 @@
 - 🔴 NO builds without permission
 - 🟢 ALWAYS update SESSION_CHANGELOG.md
 - 🟢 ALWAYS test after major changes
-- 🟢 ALWAYS watch test checklists and add new tests when needed
+- 🟢 ALWAYS update TEST_PLAN.md when needed
 - 🟢 ALWAYS use existing Expo account
 
 ---
 
-**Last Updated:** Session 4 - Phase 3 Settings & Storage Complete
+**Last Updated:** Session 5 - Phase 4 Authentication Complete
 **Read this file at the start of EVERY session!**

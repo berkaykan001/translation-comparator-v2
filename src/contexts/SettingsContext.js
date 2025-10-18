@@ -4,6 +4,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 import { AI_MODELS } from '../services/aiService';
 
 const SettingsContext = createContext();
@@ -35,11 +36,19 @@ const DEFAULT_SETTINGS = {
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const { user, isAnonymous, loadSettingsFromFirestore, syncSettingsToFirestore } = useAuth();
 
   // Load settings from AsyncStorage on mount
   useEffect(() => {
     loadSettings();
   }, []);
+
+  // When user logs in (not anonymous), load settings from Firestore
+  useEffect(() => {
+    if (user && !isAnonymous) {
+      loadFromFirestore();
+    }
+  }, [user, isAnonymous]);
 
   // Load settings from AsyncStorage
   const loadSettings = async () => {
@@ -59,12 +68,33 @@ export function SettingsProvider({ children }) {
     }
   };
 
-  // Save settings to AsyncStorage
+  // Load settings from Firestore (for logged-in users)
+  const loadFromFirestore = async () => {
+    try {
+      const firestoreSettings = await loadSettingsFromFirestore();
+      if (firestoreSettings) {
+        setSettings(firestoreSettings);
+        // Also save to AsyncStorage for offline access
+        await AsyncStorage.setItem('app_settings', JSON.stringify(firestoreSettings));
+        console.log('Settings loaded from Firestore');
+      }
+    } catch (error) {
+      console.error('Error loading from Firestore:', error);
+    }
+  };
+
+  // Save settings to AsyncStorage and Firestore
   const saveSettings = async (newSettings) => {
     try {
+      // Always save to AsyncStorage
       await AsyncStorage.setItem('app_settings', JSON.stringify(newSettings));
       console.log('Settings saved to AsyncStorage');
-      // TODO: Also sync to Firestore if user is logged in
+
+      // If user is logged in (not anonymous), also sync to Firestore
+      if (user && !isAnonymous) {
+        await syncSettingsToFirestore(newSettings);
+        console.log('Settings synced to Firestore');
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
     }
