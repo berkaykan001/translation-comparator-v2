@@ -1,7 +1,7 @@
 // Settings screen
 // User preferences, account management, subscription status
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,31 +10,25 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { AI_MODELS } from '../services/aiService';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
-
-  // State for AI model toggles (will be connected to context later)
-  const [modelStates, setModelStates] = useState(
-    AI_MODELS.reduce((acc, model) => {
-      acc[model.id] = model.enabled;
-      return acc;
-    }, {})
-  );
-
-  const toggleModel = (modelId) => {
-    setModelStates((prev) => ({
-      ...prev,
-      [modelId]: !prev[modelId],
-    }));
-    // TODO: Update global state/context
-    console.log(`Toggled ${modelId} to ${!modelStates[modelId]}`);
-  };
+  const { settings, isLoading, toggleAIModel } = useSettings();
 
   const styles = createStyles(theme);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 50 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -89,10 +83,10 @@ export default function SettingsScreen() {
             <View key={model.id} style={styles.settingItem}>
               <Text style={styles.settingLabel}>{model.name}</Text>
               <Switch
-                value={modelStates[model.id]}
-                onValueChange={() => toggleModel(model.id)}
+                value={settings.enabledModels[model.id]}
+                onValueChange={() => toggleAIModel(model.id)}
                 trackColor={{ false: '#767577', true: theme.primary }}
-                thumbColor={modelStates[model.id] ? '#f4f3f4' : '#f4f3f4'}
+                thumbColor={settings.enabledModels[model.id] ? '#f4f3f4' : '#f4f3f4'}
               />
             </View>
           ))}

@@ -13,15 +13,17 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
-import { callAllModels, getEnabledModels, callSingleModel } from '../services/aiService';
+import { callAllModels, callSingleModel } from '../services/aiService';
 import { buildGrammarPrompt, buildFollowUpPrompt } from '../utils/promptBuilder';
 
 export default function GrammarScreen() {
   const [inputText, setInputText] = useState('');
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
+  const { getEnabledModels } = useSettings();
   const styles = createCommonStyles(theme);
 
   const handleCheckGrammar = async () => {
@@ -33,7 +35,7 @@ export default function GrammarScreen() {
 
     console.log('Checking grammar:', inputText);
 
-    // Get enabled models
+    // Get enabled models from settings context
     const enabledModels = getEnabledModels();
 
     // Initialize outputs with loading state
@@ -48,6 +50,9 @@ export default function GrammarScreen() {
 
     // Build prompt (assuming English as source language for now)
     const prompt = buildGrammarPrompt(inputText, 'English', 'English');
+
+    // Get enabled model IDs
+    const enabledModelIds = enabledModels.map((model) => model.id);
 
     // Call all models asynchronously
     await callAllModels(
@@ -66,7 +71,8 @@ export default function GrammarScreen() {
             return output;
           });
         });
-      }
+      },
+      enabledModelIds
     );
   };
 

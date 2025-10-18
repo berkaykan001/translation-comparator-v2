@@ -12,9 +12,10 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
-import { callAllModels, getEnabledModels } from '../services/aiService';
+import { callAllModels } from '../services/aiService';
 import { buildTranslationPrompt } from '../utils/promptBuilder';
 
 // Language mapping
@@ -29,6 +30,7 @@ export default function TranslateScreen() {
   const [selectedLanguage, setSelectedLanguage] = useState('es'); // Default: Spanish
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
+  const { getEnabledModels } = useSettings();
   const styles = createCommonStyles(theme);
 
   const handleTranslate = async () => {
@@ -40,7 +42,7 @@ export default function TranslateScreen() {
 
     console.log('Translating:', inputText, 'to', selectedLanguage);
 
-    // Get enabled models
+    // Get enabled models from settings context
     const enabledModels = getEnabledModels();
 
     // Initialize outputs with loading state
@@ -55,6 +57,9 @@ export default function TranslateScreen() {
     // Build prompt
     const targetLanguage = LANGUAGE_NAMES[selectedLanguage];
     const prompt = buildTranslationPrompt(inputText, 'English', targetLanguage);
+
+    // Get enabled model IDs
+    const enabledModelIds = enabledModels.map((model) => model.id);
 
     // Call all models asynchronously
     await callAllModels(
@@ -72,7 +77,8 @@ export default function TranslateScreen() {
             return output;
           });
         });
-      }
+      },
+      enabledModelIds
     );
   };
 
