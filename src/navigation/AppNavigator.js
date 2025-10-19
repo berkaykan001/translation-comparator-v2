@@ -1,11 +1,13 @@
 // Main navigation structure for Translation Comparator app
 // Bottom tabs: Translate, Grammar, Usage, Settings
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import InterstitialAdManager from '../services/InterstitialAdManager';
 
 // Import screens
 import TranslateScreen from '../screens/TranslateScreen';
@@ -75,8 +77,41 @@ function AppTabs() {
 }
 
 export default function AppNavigator() {
+  const { isPremium } = useAuth();
+  const routeNameRef = useRef();
+  const navigationRef = useRef();
+
+  // Initialize interstitial ad manager on mount
+  useEffect(() => {
+    InterstitialAdManager.init();
+  }, []);
+
+  // Handle navigation state changes to show ads on tab switches
+  const onNavigationStateChange = async () => {
+    const previousRouteName = routeNameRef.current;
+    const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+
+    if (previousRouteName !== currentRouteName) {
+      console.log('Navigation changed:', previousRouteName, '->', currentRouteName);
+
+      // Don't show ads when navigating to Settings
+      if (currentRouteName !== 'Settings') {
+        await InterstitialAdManager.showAdIfReady(isPremium);
+      }
+    }
+
+    // Save the current route name for next time
+    routeNameRef.current = currentRouteName;
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+      }}
+      onStateChange={onNavigationStateChange}
+    >
       <AppTabs />
     </NavigationContainer>
   );

@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useUsageLimit } from '../contexts/UsageLimitContext';
+import { useAuth } from '../contexts/AuthContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
+import BannerAd from '../components/BannerAd';
 import { callAllModels, callSingleModel } from '../services/aiService';
 import { buildUsagePrompt, buildFollowUpPrompt } from '../utils/promptBuilder';
 
@@ -24,6 +27,8 @@ export default function UsageScreen() {
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
   const { getEnabledModels } = useSettings();
+  const { canTranslate, incrementCount, getRemainingTranslations } = useUsageLimit();
+  const { isPremium } = useAuth();
   const styles = createCommonStyles(theme);
 
   const handleAnalyzeUsage = async () => {
@@ -32,6 +37,24 @@ export default function UsageScreen() {
       Alert.alert('Error', 'Please enter some text to analyze');
       return;
     }
+
+    // Check usage limit (free users only)
+    if (!canTranslate()) {
+      Alert.alert(
+        'Daily Limit Reached',
+        'You have reached your daily limit of 15 analyses. Upgrade to Premium for unlimited analyses!',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Upgrade to Premium', onPress: () => {
+            Alert.alert('Coming Soon', 'Premium subscription will be available soon!');
+          }}
+        ]
+      );
+      return;
+    }
+
+    // Increment usage count for free users
+    await incrementCount();
 
     console.log('Analyzing usage:', inputText);
 
@@ -155,6 +178,15 @@ export default function UsageScreen() {
           <Text style={styles.actionButtonText}>Analyze Usage</Text>
         </TouchableOpacity>
 
+        {/* Usage counter for free users */}
+        {!isPremium && (
+          <View style={styles.usageCounterContainer}>
+            <Text style={styles.usageCounterText}>
+              {getRemainingTranslations()} analyses remaining today
+            </Text>
+          </View>
+        )}
+
         {/* Output windows with follow-up questions */}
         {outputs.length > 0 ? (
           <AIOutputWindow outputs={outputs} showFollowUp={true} onFollowUpSubmit={handleFollowUpSubmit} />
@@ -167,10 +199,8 @@ export default function UsageScreen() {
         )}
       </ScrollView>
 
-      {/* Banner ad placeholder */}
-      <View style={styles.adContainer}>
-        <Text style={styles.adPlaceholder}>Banner Ad</Text>
-      </View>
+      {/* Banner ad */}
+      <BannerAd />
     </SafeAreaView>
   );
 }

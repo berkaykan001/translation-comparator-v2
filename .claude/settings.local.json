@@ -4,7 +4,18 @@
       "Bash(npm install)",
       "Bash(npm test)",
       "Bash(del babel.config.js)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nComplete Phase 4: Authentication & Firestore Sync\n\nPhase 4 Implementation:\n- Created AuthContext for authentication state management\n- Implemented Email/Password registration and login\n- Added Anonymous mode (auto-enabled, persists across restarts)\n- Added Google/Facebook login UI (placeholders)\n- Implemented Firestore sync for logged-in users\n- Updated Settings screen with Account section and login modal\n\nBug Fixes:\n- Fixed anonymous user persistence (one user per device)\n- Fixed registration hanging (non-blocking Firestore operations)\n- Settings persist across login/logout\n\nCleanup:\n- Removed automated testing infrastructure (compatibility issues)\n- Focused on manual testing approach\n- Updated all documentation\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(npx expo install react-native-google-mobile-ads)",
+      "Bash(npm install react-native-iap)",
+      "Bash(npm uninstall react-native-iap)",
+      "Bash(npx expo install expo-store-review)",
+      "Bash(eas whoami)",
+      "Bash(findstr \"translation-comparator-keystore.jks credentials.json eas.json\")",
+      "Bash(keytool -genkey -v -keystore translation-comparator-keystore.jks -alias translation-comparator-key -keyalg RSA -keysize 2048 -validity 10000 -storepass translator2024 -keypass translator2024 -dname \"CN=TranslationComparator, OU=Development, O=Berkay, L=City, S=State, C=TR\")",
+      "Bash(eas build --profile preview --platform android --non-interactive)",
+      "Bash(eas build --profile preview --platform android)"
     ],
     "deny": [],
     "ask": []

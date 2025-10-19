@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "owner": "berkay_kan",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -28,10 +28,7 @@
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE"
-      ],
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-7022168619359192~1188502358"
-      }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

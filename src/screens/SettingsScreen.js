@@ -18,11 +18,13 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useCostTracking } from '../contexts/CostTrackingContext';
 import { AI_MODELS } from '../services/aiService';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { settings, isLoading, toggleAIModel } = useSettings();
+  const { getCostSummary } = useCostTracking();
   const {
     user,
     isAnonymous,
@@ -31,7 +33,9 @@ export default function SettingsScreen() {
     loginWithEmail,
     registerWithEmail,
     loginWithGoogle,
-    loginWithFacebook
+    loginWithFacebook,
+    purchasePremium,
+    restorePurchases
   } = useAuth();
 
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -138,6 +142,60 @@ export default function SettingsScreen() {
     }
   };
 
+  // Handle premium purchase
+  const handlePurchasePremium = async () => {
+    if (isAnonymous) {
+      Alert.alert(
+        'Account Required',
+        'Please create an account or login to purchase Premium subscription.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login/Register', onPress: () => setShowAuthModal(true) }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Upgrade to Premium',
+      'Get unlimited translations, grammar checks, and usage analyses. Remove all ads!\n\nPrice: $4.99/month',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Subscribe',
+          onPress: async () => {
+            try {
+              const result = await purchasePremium();
+              if (result.success) {
+                Alert.alert('Success', 'Premium subscription activated! Enjoy unlimited access.');
+              } else {
+                Alert.alert('Purchase Failed', result.error || 'Failed to complete purchase');
+              }
+            } catch (error) {
+              Alert.alert('Purchase Failed', error.message);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle restore purchases
+  const handleRestorePurchases = async () => {
+    try {
+      Alert.alert('Restoring Purchases', 'Please wait...');
+      const result = await restorePurchases();
+
+      if (result.success) {
+        Alert.alert('Success', result.message);
+      } else {
+        Alert.alert('Restore Purchases', result.message || 'No previous purchases found.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to restore purchases: ' + error.message);
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -200,8 +258,14 @@ export default function SettingsScreen() {
           </View>
 
           {!isPremium && !isAnonymous && (
-            <TouchableOpacity style={styles.upgradeButton}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={handlePurchasePremium}>
               <Text style={styles.upgradeButtonText}>Upgrade to Premium - $4.99/month</Text>
+            </TouchableOpacity>
+          )}
+
+          {!isAnonymous && (
+            <TouchableOpacity style={styles.restoreButton} onPress={handleRestorePurchases}>
+              <Text style={styles.restoreButtonText}>Restore Purchases</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -255,13 +319,73 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Usage Stats */}
+        {/* Usage & Cost Tracking */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Usage Stats</Text>
-          <View style={styles.statsContainer}>
-            <Text style={styles.statsText}>Translations today: 0/15</Text>
-            <Text style={styles.statsText}>This month: 0</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Usage & Cost Tracking</Text>
+          <Text style={styles.sectionDescription}>
+            Estimated API costs based on token usage
+          </Text>
+
+          {(() => {
+            const costSummary = getCostSummary();
+            return (
+              <>
+                {/* Today's Usage */}
+                <View style={styles.costCard}>
+                  <Text style={styles.costCardTitle}>Today</Text>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>API Calls:</Text>
+                    <Text style={styles.costValue}>{costSummary.today.calls}</Text>
+                  </View>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>Estimated Cost:</Text>
+                    <Text style={styles.costValue}>${costSummary.today.cost}</Text>
+                  </View>
+                </View>
+
+                {/* This Month's Usage */}
+                <View style={styles.costCard}>
+                  <Text style={styles.costCardTitle}>This Month</Text>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>API Calls:</Text>
+                    <Text style={styles.costValue}>{costSummary.thisMonth.calls}</Text>
+                  </View>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>Estimated Cost:</Text>
+                    <Text style={styles.costValue}>${costSummary.thisMonth.cost}</Text>
+                  </View>
+                </View>
+
+                {/* Total Usage */}
+                <View style={styles.costCard}>
+                  <Text style={styles.costCardTitle}>All Time</Text>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>API Calls:</Text>
+                    <Text style={styles.costValue}>{costSummary.total.calls}</Text>
+                  </View>
+                  <View style={styles.costRow}>
+                    <Text style={styles.costLabel}>Estimated Cost:</Text>
+                    <Text style={styles.costValue}>${costSummary.total.cost}</Text>
+                  </View>
+                </View>
+
+                {/* Model Breakdown */}
+                {costSummary.models.length > 0 && (
+                  <View style={styles.costCard}>
+                    <Text style={styles.costCardTitle}>By Model</Text>
+                    {costSummary.models.map((model) => (
+                      <View key={model.modelId} style={styles.costRow}>
+                        <Text style={styles.costLabel}>{model.modelId}:</Text>
+                        <Text style={styles.costValue}>
+                          {model.calls} calls (${model.cost})
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            );
+          })()}
         </View>
 
         {/* About */}
@@ -434,6 +558,35 @@ const createStyles = (theme) => StyleSheet.create({
     color: theme.textSecondary,
     marginVertical: 5,
   },
+  costCard: {
+    backgroundColor: theme.inputBackground,
+    padding: 15,
+    marginHorizontal: 15,
+    marginVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+  },
+  costCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.textPrimary,
+    marginBottom: 10,
+  },
+  costRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
+  costLabel: {
+    fontSize: 14,
+    color: theme.textSecondary,
+  },
+  costValue: {
+    fontSize: 14,
+    color: theme.textPrimary,
+    fontWeight: '600',
+  },
   upgradeButton: {
     backgroundColor: theme.primary,
     padding: 15,
@@ -445,6 +598,21 @@ const createStyles = (theme) => StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  restoreButton: {
+    backgroundColor: theme.cardBackground,
+    padding: 12,
+    marginHorizontal: 15,
+    marginTop: 5,
+    marginBottom: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    alignItems: 'center',
+  },
+  restoreButtonText: {
+    color: theme.textPrimary,
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,

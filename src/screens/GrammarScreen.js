@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useUsageLimit } from '../contexts/UsageLimitContext';
+import { useAuth } from '../contexts/AuthContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
+import BannerAd from '../components/BannerAd';
 import { callAllModels, callSingleModel } from '../services/aiService';
 import { buildGrammarPrompt, buildFollowUpPrompt } from '../utils/promptBuilder';
 
@@ -24,12 +27,29 @@ export default function GrammarScreen() {
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
   const { getEnabledModels } = useSettings();
+  const { canTranslate, incrementCount, getRemainingTranslations } = useUsageLimit();
+  const { isPremium } = useAuth();
   const styles = createCommonStyles(theme);
 
   const handleCheckGrammar = async () => {
     // Validation
     if (!inputText.trim()) {
       Alert.alert('Error', 'Please enter some text to check');
+      return;
+    }
+
+    // Check usage limit (free users only)
+    if (!canTranslate()) {
+      Alert.alert(
+        'Daily Limit Reached',
+        'You have reached your daily limit of 15 checks. Upgrade to Premium for unlimited checks!',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Upgrade to Premium', onPress: () => {
+            Alert.alert('Coming Soon', 'Premium subscription will be available soon!');
+          }}
+        ]
+      );
       return;
     }
 
@@ -47,6 +67,9 @@ export default function GrammarScreen() {
       originalPrompt: null,
     }));
     setOutputs(initialOutputs);
+
+    // Increment usage count (for free users)
+    await incrementCount();
 
     // Build prompt (assuming English as source language for now)
     const prompt = buildGrammarPrompt(inputText, 'English', 'English');
@@ -155,6 +178,15 @@ export default function GrammarScreen() {
           <Text style={styles.actionButtonText}>Check Grammar</Text>
         </TouchableOpacity>
 
+        {/* Usage counter (for free users) */}
+        {!isPremium && (
+          <View style={styles.usageCounter}>
+            <Text style={styles.usageCounterText}>
+              {getRemainingTranslations()} checks remaining today
+            </Text>
+          </View>
+        )}
+
         {/* Output windows with follow-up questions */}
         {outputs.length > 0 ? (
           <AIOutputWindow outputs={outputs} showFollowUp={true} onFollowUpSubmit={handleFollowUpSubmit} />
@@ -167,10 +199,8 @@ export default function GrammarScreen() {
         )}
       </ScrollView>
 
-      {/* Banner ad placeholder */}
-      <View style={styles.adContainer}>
-        <Text style={styles.adPlaceholder}>Banner Ad</Text>
-      </View>
+      {/* Banner ad */}
+      <BannerAd />
     </SafeAreaView>
   );
 }

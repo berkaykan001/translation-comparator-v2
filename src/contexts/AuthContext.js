@@ -9,6 +9,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import BillingManager from '../services/BillingManager'; // Temporarily disabled for Expo Go
 
 const AuthContext = createContext();
 
@@ -26,6 +27,24 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Initialize BillingManager on mount
+  // Temporarily disabled for Expo Go
+  // useEffect(() => {
+  //   const initBilling = async () => {
+  //     try {
+  //       await BillingManager.init();
+  //     } catch (error) {
+  //       console.error('Failed to initialize billing:', error);
+  //     }
+  //   };
+  //   initBilling();
+
+  //   // Cleanup on unmount
+  //   return () => {
+  //     BillingManager.destroy();
+  //   };
+  // }, []);
 
   // Listen to auth state changes
   useEffect(() => {
@@ -67,14 +86,20 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, [hasInitialized]);
 
-  // Check premium status from Firestore
+  // Check premium status from Firestore (and BillingManager when enabled)
   const checkPremiumStatus = async (uid) => {
     try {
+      // Check Firestore for premium status
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         setIsPremium(userData.isPremium || false);
       }
+
+      // TODO: Re-enable BillingManager when using development build
+      // const hasPremiumSubscription = await BillingManager.hasPremiumSubscription();
+      // const premiumStatus = isPremiumFromFirestore || hasPremiumSubscription;
+      // setIsPremium(premiumStatus);
     } catch (error) {
       console.error('Error checking premium status:', error);
     }
@@ -193,6 +218,53 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Purchase premium subscription
+  // Temporarily disabled for Expo Go
+  const purchasePremium = async () => {
+    return {
+      success: false,
+      error: 'In-app purchases coming soon! Build APK to test billing.'
+    };
+
+    // TODO: Re-enable when using development build
+    // try {
+    //   await BillingManager.purchasePremium();
+    //   if (user && !isAnonymous) {
+    //     await checkPremiumStatus(user.uid);
+    //   }
+    //   return { success: true };
+    // } catch (error) {
+    //   return { success: false, error: error.message };
+    // }
+  };
+
+  // Restore previous purchases
+  // Temporarily disabled for Expo Go
+  const restorePurchases = async () => {
+    return {
+      success: false,
+      message: 'Restore purchases coming soon! Build APK to test billing.'
+    };
+
+    // TODO: Re-enable when using development build
+    // try {
+    //   const premiumPurchase = await BillingManager.restorePurchases();
+    //   if (premiumPurchase) {
+    //     setIsPremium(true);
+    //     if (user && !isAnonymous) {
+    //       await setDoc(doc(db, 'users', user.uid), {
+    //         isPremium: true,
+    //         updatedAt: new Date().toISOString()
+    //       }, { merge: true });
+    //     }
+    //     return { success: true, message: 'Premium subscription restored!' };
+    //   }
+    //   return { success: false, message: 'No previous purchases found.' };
+    // } catch (error) {
+    //   return { success: false, error: error.message };
+    // }
+  };
+
   const value = {
     user,
     isAnonymous,
@@ -205,7 +277,9 @@ export const AuthProvider = ({ children }) => {
     loginWithFacebook,
     logout,
     syncSettingsToFirestore,
-    loadSettingsFromFirestore
+    loadSettingsFromFirestore,
+    purchasePremium,
+    restorePurchases
   };
 
   return (

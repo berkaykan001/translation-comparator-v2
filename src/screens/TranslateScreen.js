@@ -13,8 +13,11 @@ import {
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useUsageLimit } from '../contexts/UsageLimitContext';
+import { useAuth } from '../contexts/AuthContext';
 import { createCommonStyles } from '../components/ThemedComponents';
 import AIOutputWindow from '../components/AIOutputWindow';
+import BannerAd from '../components/BannerAd';
 import { callAllModels } from '../services/aiService';
 import { buildTranslationPrompt } from '../utils/promptBuilder';
 
@@ -31,12 +34,30 @@ export default function TranslateScreen() {
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
   const { getEnabledModels } = useSettings();
+  const { canTranslate, incrementCount, getRemainingTranslations } = useUsageLimit();
+  const { isPremium } = useAuth();
   const styles = createCommonStyles(theme);
 
   const handleTranslate = async () => {
     // Validation
     if (!inputText.trim()) {
       Alert.alert('Error', 'Please enter some text to translate');
+      return;
+    }
+
+    // Check usage limit (free users only)
+    if (!canTranslate()) {
+      Alert.alert(
+        'Daily Limit Reached',
+        'You have reached your daily limit of 15 translations. Upgrade to Premium for unlimited translations!',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Upgrade to Premium', onPress: () => {
+            // TODO: Navigate to subscription screen
+            Alert.alert('Coming Soon', 'Premium subscription will be available soon!');
+          }}
+        ]
+      );
       return;
     }
 
@@ -53,6 +74,9 @@ export default function TranslateScreen() {
       loading: true,
     }));
     setOutputs(initialOutputs);
+
+    // Increment usage count (for free users)
+    await incrementCount();
 
     // Build prompt
     const targetLanguage = LANGUAGE_NAMES[selectedLanguage];
@@ -131,6 +155,15 @@ export default function TranslateScreen() {
           <Text style={styles.actionButtonText}>Translate</Text>
         </TouchableOpacity>
 
+        {/* Usage counter (for free users) */}
+        {!isPremium && (
+          <View style={styles.usageCounter}>
+            <Text style={styles.usageCounterText}>
+              {getRemainingTranslations()} translations remaining today
+            </Text>
+          </View>
+        )}
+
         {/* Output windows */}
         {outputs.length > 0 ? (
           <AIOutputWindow outputs={outputs} showFollowUp={false} />
@@ -143,10 +176,8 @@ export default function TranslateScreen() {
         )}
       </ScrollView>
 
-      {/* Banner ad placeholder */}
-      <View style={styles.adContainer}>
-        <Text style={styles.adPlaceholder}>Banner Ad</Text>
-      </View>
+      {/* Banner ad */}
+      <BannerAd />
     </SafeAreaView>
   );
 }
