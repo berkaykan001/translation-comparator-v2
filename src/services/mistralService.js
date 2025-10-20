@@ -2,16 +2,16 @@
 // Handles API calls to Mistral's Chat Completion endpoint
 
 import { API_KEYS, API_ENDPOINTS } from '../config/apiKeys';
+import { retryWithTimeout } from '../utils/apiRetry';
 
 /**
- * Call Mistral API with a prompt
+ * Internal function to make a single Mistral API call
  * @param {string} prompt - The prompt to send to the API
- * @param {string} model - Model to use (default: mistral-small-latest)
+ * @param {string} model - Model to use
  * @returns {Promise<string>} - The API response text
  */
-export async function callMistral(prompt, model = 'mistral-small-latest') {
-  try {
-    const response = await fetch(API_ENDPOINTS.MISTRAL, {
+async function callMistralOnce(prompt, model) {
+  const response = await fetch(API_ENDPOINTS.MISTRAL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,11 +36,35 @@ export async function callMistral(prompt, model = 'mistral-small-latest') {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('Mistral Service Error:', error);
-    throw error;
-  }
+
+    // Validate response structure
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('Mistral API returned malformed response:', JSON.stringify(data));
+      throw new Error('Mistral API returned an empty response.');
+    }
+
+    const message = data.choices[0]?.message?.content;
+    if (!message || typeof message !== 'string') {
+      console.error('Mistral API response missing message content:', JSON.stringify(data));
+      throw new Error('Mistral API returned a response without content.');
+    }
+
+    return message.trim();
+}
+
+/**
+ * Call Mistral API with automatic retry logic
+ * @param {string} prompt - The prompt to send to the API
+ * @param {string} model - Model to use (default: mistral-small-latest)
+ * @returns {Promise<string>} - The API response text
+ */
+export async function callMistral(prompt, model = 'mistral-small-latest') {
+  return retryWithTimeout(
+    () => callMistralOnce(prompt, model),
+    'Mistral',
+    3,  // max attempts
+    20000  // 20 seconds timeout
+  );
 }
 
 export default {

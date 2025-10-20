@@ -14,6 +14,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
+import FollowUpInput from './FollowUpInput';
 
 /**
  * AIOutputWindow Component
@@ -21,12 +22,12 @@ import { useTheme } from '../contexts/ThemeContext';
  * Props:
  * - outputs: Array of objects with shape:
  *   [
- *     { modelName: 'GPT-4.1', text: 'Translation...', loading: false },
- *     { modelName: 'Claude Haiku 3.5', text: null, loading: true },
+ *     { modelId: 'openai', modelName: 'GPT-4.1', text: 'Translation...', loading: false },
+ *     { modelId: 'claude', modelName: 'Claude Haiku 3.5', text: null, loading: true },
  *     ...
  *   ]
  * - showFollowUp: Boolean - Whether to show follow-up input (Grammar/Usage modes only)
- * - onFollowUpSubmit: Function - Called when user submits follow-up question
+ * - onFollowUpSubmit: Function - Called when user submits follow-up question (question, modelId)
  */
 export default function AIOutputWindow({ outputs = [], showFollowUp = false, onFollowUpSubmit }) {
   const { theme } = useTheme();
@@ -97,13 +98,13 @@ export default function AIOutputWindow({ outputs = [], showFollowUp = false, onF
               )}
             </ScrollView>
 
-            {/* Follow-up input placeholder (will be implemented later) */}
+            {/* Follow-up input for Grammar and Usage modes */}
             {showFollowUp && !output.loading && output.text && (
-              <View style={[styles.followUpPlaceholder, { borderTopColor: theme.border }]}>
-                <Text style={[styles.followUpText, { color: theme.textPlaceholder }]}>
-                  Follow-up Q&A (coming soon)
-                </Text>
-              </View>
+              <FollowUpInput
+                modelId={output.modelId}
+                onSubmit={onFollowUpSubmit}
+                placeholder="Ask a follow-up question..."
+              />
             )}
           </TouchableOpacity>
         ))}
@@ -176,15 +177,6 @@ const styles = StyleSheet.create({
   emptyText: {
     padding: 15,
     fontSize: 14,
-    textAlign: 'center',
-  },
-  followUpPlaceholder: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderTopWidth: 1,
-  },
-  followUpText: {
-    fontSize: 12,
     textAlign: 'center',
   },
 });
