@@ -11,25 +11,14 @@ const SettingsContext = createContext();
 
 // Default settings
 const DEFAULT_SETTINGS = {
-  // AI Model selection - which models are enabled
-  enabledModels: {
-    openai: false,
-    claude: false,
-    gemini: false,
-    mistral: false,
-    perplexity: true,
-    deepseek: true,
-    grok: true,
-    openrouter: true,
-  },
   // Language preferences
   nativeLanguage: 'en', // English
   targetLanguages: ['es', 'fr', 'tr'], // Spanish, French, Turkish
-  // Output window counts per mode
-  outputCounts: {
-    translate: 4,
-    grammar: 4,
-    usage: 4,
+  // Selected AI models per mode (each mode can have 1-5 models)
+  selectedModels: {
+    translate: ['perplexity', 'deepseek', 'grok', 'openrouter'], // Default 4 models
+    grammar: ['perplexity', 'deepseek', 'grok', 'openrouter'], // Default 4 models
+    usage: ['perplexity', 'deepseek', 'grok', 'openrouter'], // Default 4 models
   },
 };
 
@@ -50,19 +39,54 @@ export function SettingsProvider({ children }) {
     }
   }, [user, isAnonymous]);
 
+  // Migrate old settings format to new format
+  const migrateSettings = (oldSettings) => {
+    // If already has new structure, return as-is
+    if (oldSettings.selectedModels) {
+      return oldSettings;
+    }
+
+    // Migrate from old structure
+    console.log('Migrating settings from old format to new format');
+
+    // Get enabled models from old enabledModels structure
+    const enabledModelIds = oldSettings.enabledModels
+      ? Object.keys(oldSettings.enabledModels).filter(id => oldSettings.enabledModels[id])
+      : ['perplexity', 'deepseek', 'grok', 'openrouter'];
+
+    // Limit to first 4 models if more than 4 were enabled
+    const limitedModels = enabledModelIds.slice(0, 4);
+
+    return {
+      nativeLanguage: oldSettings.nativeLanguage || DEFAULT_SETTINGS.nativeLanguage,
+      targetLanguages: oldSettings.targetLanguages || DEFAULT_SETTINGS.targetLanguages,
+      selectedModels: {
+        translate: limitedModels,
+        grammar: limitedModels,
+        usage: limitedModels,
+      },
+    };
+  };
+
   // Load settings from AsyncStorage
   const loadSettings = async () => {
     try {
       const savedSettings = await AsyncStorage.getItem('app_settings');
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
-        setSettings(parsed);
+        const migratedSettings = migrateSettings(parsed);
+        setSettings(migratedSettings);
+        // Save migrated settings back to AsyncStorage
+        await AsyncStorage.setItem('app_settings', JSON.stringify(migratedSettings));
         console.log('Settings loaded from AsyncStorage');
       } else {
         console.log('No saved settings, using defaults');
+        setSettings(DEFAULT_SETTINGS);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      // If anything goes wrong, use defaults
+      setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
     }
@@ -73,9 +97,12 @@ export function SettingsProvider({ children }) {
     try {
       const firestoreSettings = await loadSettingsFromFirestore();
       if (firestoreSettings) {
-        setSettings(firestoreSettings);
-        // Also save to AsyncStorage for offline access
-        await AsyncStorage.setItem('app_settings', JSON.stringify(firestoreSettings));
+        const migratedSettings = migrateSettings(firestoreSettings);
+        setSettings(migratedSettings);
+        // Also save migrated settings to AsyncStorage for offline access
+        await AsyncStorage.setItem('app_settings', JSON.stringify(migratedSettings));
+        // Also sync migrated settings back to Firestore
+        await syncSettingsToFirestore(migratedSettings);
         console.log('Settings loaded from Firestore');
       }
     } catch (error) {
@@ -100,19 +127,6 @@ export function SettingsProvider({ children }) {
     }
   };
 
-  // Toggle an AI model on/off
-  const toggleAIModel = async (modelId) => {
-    const newSettings = {
-      ...settings,
-      enabledModels: {
-        ...settings.enabledModels,
-        [modelId]: !settings.enabledModels[modelId],
-      },
-    };
-    setSettings(newSettings);
-    await saveSettings(newSettings);
-  };
-
   // Update native language
   const setNativeLanguage = async (languageCode) => {
     const newSettings = {
@@ -123,10 +137,10 @@ export function SettingsProvider({ children }) {
     await saveSettings(newSettings);
   };
 
-  // Update target languages (array of 3 language codes)
+  // Update target languages (array of up to 4 language codes)
   const setTargetLanguages = async (languageCodes) => {
-    if (languageCodes.length !== 3) {
-      console.warn('Target languages must be exactly 3');
+    if (languageCodes.length > 4) {
+      console.warn('Target languages must be maximum 4');
       return;
     }
     const newSettings = {
@@ -137,22 +151,32 @@ export function SettingsProvider({ children }) {
     await saveSettings(newSettings);
   };
 
-  // Update output window count for a specific mode
-  const setOutputCount = async (mode, count) => {
+  // Update selected AI models for a specific mode (1-5 models)
+  const setSelectedModels = async (mode, modelIds) => {
+    if (modelIds.length < 1 || modelIds.length > 5) {
+      console.warn('Selected models must be between 1 and 5');
+      return;
+    }
     const newSettings = {
       ...settings,
-      outputCounts: {
-        ...settings.outputCounts,
-        [mode]: count,
+      selectedModels: {
+        ...settings.selectedModels,
+        [mode]: modelIds,
       },
     };
     setSettings(newSettings);
     await saveSettings(newSettings);
   };
 
-  // Get list of enabled AI models
-  const getEnabledModels = () => {
-    return AI_MODELS.filter((model) => settings.enabledModels[model.id]);
+  // Get selected AI models for a specific mode
+  const getSelectedModels = (mode) => {
+    // Safety check: if selectedModels doesn't exist, use defaults
+    if (!settings.selectedModels || !settings.selectedModels[mode]) {
+      const defaultIds = DEFAULT_SETTINGS.selectedModels[mode];
+      return AI_MODELS.filter((model) => defaultIds.includes(model.id));
+    }
+    const selectedIds = settings.selectedModels[mode];
+    return AI_MODELS.filter((model) => selectedIds.includes(model.id));
   };
 
   // Reset settings to defaults
@@ -164,11 +188,10 @@ export function SettingsProvider({ children }) {
   const value = {
     settings,
     isLoading,
-    toggleAIModel,
     setNativeLanguage,
     setTargetLanguages,
-    setOutputCount,
-    getEnabledModels,
+    setSelectedModels,
+    getSelectedModels,
     resetSettings,
   };
 

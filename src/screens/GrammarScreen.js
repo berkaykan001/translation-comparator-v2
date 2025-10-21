@@ -21,12 +21,13 @@ import AIOutputWindow from '../components/AIOutputWindow';
 import BannerAd from '../components/BannerAd';
 import { callAllModels, callSingleModel } from '../services/aiService';
 import { buildGrammarPrompt, buildFollowUpPrompt } from '../utils/promptBuilder';
+import { getLanguageByCode } from '../config/languages';
 
 export default function GrammarScreen() {
   const [inputText, setInputText] = useState('');
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
-  const { getEnabledModels } = useSettings();
+  const { settings, getSelectedModels } = useSettings();
   const { canTranslate, incrementCount, getRemainingTranslations } = useUsageLimit();
   const { isPremium } = useAuth();
   const styles = createCommonStyles(theme);
@@ -55,11 +56,11 @@ export default function GrammarScreen() {
 
     console.log('Checking grammar:', inputText);
 
-    // Get enabled models from settings context
-    const enabledModels = getEnabledModels();
+    // Get selected models for grammar mode from settings
+    const modelsToUse = getSelectedModels('grammar');
 
     // Initialize outputs with loading state
-    const initialOutputs = enabledModels.map((model) => ({
+    const initialOutputs = modelsToUse.map((model) => ({
       modelId: model.id,
       modelName: model.name,
       text: null,
@@ -71,11 +72,12 @@ export default function GrammarScreen() {
     // Increment usage count (for free users)
     await incrementCount();
 
-    // Build prompt (assuming English as source language for now)
-    const prompt = buildGrammarPrompt(inputText, 'English', 'English');
+    // Build prompt using native language from settings
+    const nativeLanguage = getLanguageByCode(settings.nativeLanguage).name;
+    const prompt = buildGrammarPrompt(inputText, nativeLanguage, nativeLanguage);
 
-    // Get enabled model IDs
-    const enabledModelIds = enabledModels.map((model) => model.id);
+    // Get model IDs to call
+    const modelIds = modelsToUse.map((model) => model.id);
 
     // Call all models asynchronously
     await callAllModels(
@@ -95,7 +97,7 @@ export default function GrammarScreen() {
           });
         });
       },
-      enabledModelIds
+      modelIds
     );
   };
 

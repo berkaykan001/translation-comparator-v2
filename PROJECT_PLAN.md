@@ -579,18 +579,24 @@ Respond in ${userNativeLanguage}.`;
 
 ---
 
-### **Phase 7: Polish & Testing** (Est. 1-2 sessions)
-- Run full test plan
-- Fix bugs from testing
-- Performance optimization
-- Error handling improvements
-- UI refinements
+### **Phase 7: Polish & Testing** ✅ IN PROGRESS (Session 8)
+- [x] Fixed settings integration (language/AI model settings now properly trigger actions)
+- [x] Redesigned settings structure (per-mode AI model selection)
+- [x] Settings migration logic (old → new format)
+- [x] Language tabs overflow fix (horizontal ScrollView)
+- [x] UI improvements (centered tabs, compact display)
+- [ ] Run full test plan
+- [ ] Performance optimization
+- [ ] Final bug fixes
 
 **Test Checklist:**
+- [x] Settings changes reflect immediately in all screens
+- [x] Language selection works properly
+- [x] AI model selection per mode works
+- [x] Settings persist across app restarts
 - [ ] Complete TEST_PLAN.md
 - [ ] No critical bugs
 - [ ] App performs smoothly
-- [ ] All features work as expected
 
 ---
 
@@ -679,5 +685,5 @@ Respond in ${userNativeLanguage}.`;
 
 ---
 
-**Last Updated:** Session 7 - Phase 6 Follow-Up Questions Complete
+**Last Updated:** Session 8 - Phase 7 Settings Integration & UI Polish
 **Status:** In Development - Phase 7 (Polish & Testing)

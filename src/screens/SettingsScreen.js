@@ -1,7 +1,7 @@
 // Settings screen
 // User preferences, account management, subscription status
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,16 +14,18 @@ import {
   Modal,
   TextInput,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useCostTracking } from '../contexts/CostTrackingContext';
 import { AI_MODELS } from '../services/aiService';
+import { LANGUAGES, getLanguageByCode } from '../config/languages';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
-  const { settings, isLoading, toggleAIModel } = useSettings();
+  const { settings, isLoading, setNativeLanguage, setTargetLanguages, setSelectedModels } = useSettings();
   const { getCostSummary } = useCostTracking();
   const {
     user,
@@ -44,7 +46,31 @@ export default function SettingsScreen() {
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Language modals
+  const [showNativeLanguageModal, setShowNativeLanguageModal] = useState(false);
+  const [showTargetLanguagesModal, setShowTargetLanguagesModal] = useState(false);
+  const [tempTargetLanguages, setTempTargetLanguages] = useState([]);
+
+  // AI Models selection modal
+  const [showAIModelsModal, setShowAIModelsModal] = useState(false);
+  const [aiModelsMode, setAIModelsMode] = useState('translate'); // 'translate', 'grammar', or 'usage'
+  const [tempSelectedModels, setTempSelectedModels] = useState([]);
+
   const styles = createStyles(theme);
+
+  // Initialize temp target languages when modal opens
+  useEffect(() => {
+    if (showTargetLanguagesModal) {
+      setTempTargetLanguages([...settings.targetLanguages]);
+    }
+  }, [showTargetLanguagesModal]);
+
+  // Initialize temp selected models when modal opens
+  useEffect(() => {
+    if (showAIModelsModal && settings.selectedModels) {
+      setTempSelectedModels([...settings.selectedModels[aiModelsMode]]);
+    }
+  }, [showAIModelsModal, aiModelsMode]);
 
   // Handle login
   const handleLogin = async () => {
@@ -196,6 +222,74 @@ export default function SettingsScreen() {
     }
   };
 
+  // Handle native language selection
+  const handleNativeLanguageSelect = async (languageCode) => {
+    await setNativeLanguage(languageCode);
+    setShowNativeLanguageModal(false);
+  };
+
+  // Toggle target language
+  const toggleTargetLanguage = (languageCode) => {
+    if (tempTargetLanguages.includes(languageCode)) {
+      setTempTargetLanguages(tempTargetLanguages.filter(code => code !== languageCode));
+    } else {
+      if (tempTargetLanguages.length < 4) {
+        setTempTargetLanguages([...tempTargetLanguages, languageCode]);
+      } else {
+        Alert.alert('Maximum Reached', 'You can select up to 4 target languages');
+      }
+    }
+  };
+
+  // Save target languages
+  const saveTargetLanguages = async () => {
+    if (tempTargetLanguages.length === 0) {
+      Alert.alert('Error', 'Please select at least 1 target language');
+      return;
+    }
+    await setTargetLanguages(tempTargetLanguages);
+    setShowTargetLanguagesModal(false);
+  };
+
+  // Open AI models modal
+  const openAIModelsModal = (mode) => {
+    setAIModelsMode(mode);
+    setShowAIModelsModal(true);
+  };
+
+  // Toggle AI model selection
+  const toggleAIModel = (modelId) => {
+    if (tempSelectedModels.includes(modelId)) {
+      setTempSelectedModels(tempSelectedModels.filter(id => id !== modelId));
+    } else {
+      if (tempSelectedModels.length < 5) {
+        setTempSelectedModels([...tempSelectedModels, modelId]);
+      } else {
+        Alert.alert('Maximum Reached', 'You can select up to 5 AI models per mode');
+      }
+    }
+  };
+
+  // Save selected AI models
+  const saveSelectedModels = async () => {
+    if (tempSelectedModels.length === 0) {
+      Alert.alert('Error', 'Please select at least 1 AI model');
+      return;
+    }
+    await setSelectedModels(aiModelsMode, tempSelectedModels);
+    setShowAIModelsModal(false);
+  };
+
+  // Get display name for mode
+  const getModeName = (mode) => {
+    switch (mode) {
+      case 'translate': return 'Translation Mode';
+      case 'grammar': return 'Grammar Mode';
+      case 'usage': return 'Usage Mode';
+      default: return mode;
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -273,51 +367,67 @@ export default function SettingsScreen() {
         {/* Language Preferences */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Language Preferences</Text>
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowNativeLanguageModal(true)}
+          >
             <Text style={styles.settingLabel}>Native Language</Text>
-            <Text style={styles.settingValue}>English</Text>
+            <Text style={styles.settingValue}>
+              {getLanguageByCode(settings.nativeLanguage).name} →
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowTargetLanguagesModal(true)}
+          >
             <Text style={styles.settingLabel}>Target Languages</Text>
-            <Text style={styles.settingValue}>Spanish, French, Turkish</Text>
+            <Text style={styles.settingValue}>
+              {settings.targetLanguages.length === 0
+                ? 'None selected →'
+                : settings.targetLanguages.length <= 2
+                ? `${settings.targetLanguages.map(code => getLanguageByCode(code).name).join(', ')} →`
+                : `${settings.targetLanguages.length} ${settings.targetLanguages.length === 1 ? 'language' : 'languages'} →`
+              }
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* AI Models Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI Models</Text>
-          <Text style={styles.sectionDescription}>
-            Select which AI models to use for translations and analysis
-          </Text>
-          {AI_MODELS.map((model) => (
-            <View key={model.id} style={styles.settingItem}>
-              <Text style={styles.settingLabel}>{model.name}</Text>
-              <Switch
-                value={settings.enabledModels[model.id]}
-                onValueChange={() => toggleAIModel(model.id)}
-                trackColor={{ false: '#767577', true: theme.primary }}
-                thumbColor={settings.enabledModels[model.id] ? '#f4f3f4' : '#f4f3f4'}
-              />
-            </View>
-          ))}
-        </View>
-
-        {/* Output Configuration */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Output Windows</Text>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Translation Mode</Text>
-            <Text style={styles.settingValue}>4 windows</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Grammar Mode</Text>
-            <Text style={styles.settingValue}>4 windows</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Usage Mode</Text>
-            <Text style={styles.settingValue}>4 windows</Text>
-          </TouchableOpacity>
-        </View>
+        {/* AI Models Selection per Mode */}
+        {settings.selectedModels && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI Models</Text>
+            <Text style={styles.sectionDescription}>
+              Select 1-5 AI models for each mode
+            </Text>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => openAIModelsModal('translate')}
+            >
+              <Text style={styles.settingLabel}>Translation Mode</Text>
+              <Text style={styles.settingValue}>
+                {settings.selectedModels.translate.length} {settings.selectedModels.translate.length === 1 ? 'model' : 'models'} →
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => openAIModelsModal('grammar')}
+            >
+              <Text style={styles.settingLabel}>Grammar Mode</Text>
+              <Text style={styles.settingValue}>
+                {settings.selectedModels.grammar.length} {settings.selectedModels.grammar.length === 1 ? 'model' : 'models'} →
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => openAIModelsModal('usage')}
+            >
+              <Text style={styles.settingLabel}>Usage Mode</Text>
+              <Text style={styles.settingValue}>
+                {settings.selectedModels.usage.length} {settings.selectedModels.usage.length === 1 ? 'model' : 'models'} →
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Usage & Cost Tracking */}
         <View style={styles.section}>
@@ -391,16 +501,10 @@ export default function SettingsScreen() {
         {/* About */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <TouchableOpacity style={styles.settingItem}>
+          <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>Version</Text>
             <Text style={styles.settingValue}>1.0.0</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Privacy Policy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Terms of Service</Text>
-          </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -499,6 +603,150 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Native Language Selection Modal */}
+      <Modal
+        visible={showNativeLanguageModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowNativeLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Native Language</Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageItem,
+                    settings.nativeLanguage === item.code && styles.languageItemSelected
+                  ]}
+                  onPress={() => handleNativeLanguageSelect(item.code)}
+                >
+                  <Text style={[
+                    styles.languageText,
+                    settings.nativeLanguage === item.code && styles.languageTextSelected
+                  ]}>
+                    {item.name} ({item.nativeName})
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowNativeLanguageModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Target Languages Selection Modal */}
+      <Modal
+        visible={showTargetLanguagesModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowTargetLanguagesModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Target Languages</Text>
+            <Text style={styles.modalSubtitle}>
+              Choose up to 4 languages ({tempTargetLanguages.length}/4 selected)
+            </Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageItem,
+                    tempTargetLanguages.includes(item.code) && styles.languageItemSelected
+                  ]}
+                  onPress={() => toggleTargetLanguage(item.code)}
+                >
+                  <Text style={[
+                    styles.languageText,
+                    tempTargetLanguages.includes(item.code) && styles.languageTextSelected
+                  ]}>
+                    {item.name} ({item.nativeName})
+                  </Text>
+                  {tempTargetLanguages.includes(item.code) && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={saveTargetLanguages}
+            >
+              <Text style={styles.primaryButtonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowTargetLanguagesModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* AI Models Selection Modal */}
+      <Modal
+        visible={showAIModelsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAIModelsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{getModeName(aiModelsMode)}</Text>
+            <Text style={styles.modalSubtitle}>
+              Select 1-5 AI models ({tempSelectedModels.length}/5 selected)
+            </Text>
+            <FlatList
+              data={AI_MODELS}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageItem,
+                    tempSelectedModels.includes(item.id) && styles.languageItemSelected
+                  ]}
+                  onPress={() => toggleAIModel(item.id)}
+                >
+                  <Text style={[
+                    styles.languageText,
+                    tempSelectedModels.includes(item.id) && styles.languageTextSelected
+                  ]}>
+                    {item.name}
+                  </Text>
+                  {tempSelectedModels.includes(item.id) && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={saveSelectedModels}
+            >
+              <Text style={styles.primaryButtonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowAIModelsModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -549,14 +797,6 @@ const createStyles = (theme) => StyleSheet.create({
   settingValue: {
     fontSize: 14,
     color: theme.textSecondary,
-  },
-  statsContainer: {
-    padding: 15,
-  },
-  statsText: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    marginVertical: 5,
   },
   costCard: {
     backgroundColor: theme.inputBackground,
@@ -626,11 +866,18 @@ const createStyles = (theme) => StyleSheet.create({
     padding: 20,
     width: '85%',
     maxWidth: 400,
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: theme.text,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: theme.textSecondary,
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -707,5 +954,56 @@ const createStyles = (theme) => StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+  },
+  languageItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.borderLight,
+  },
+  languageItemSelected: {
+    backgroundColor: theme.primary + '20',
+  },
+  languageText: {
+    fontSize: 16,
+    color: theme.text,
+  },
+  languageTextSelected: {
+    color: theme.primary,
+    fontWeight: '600',
+  },
+  checkmark: {
+    fontSize: 18,
+    color: theme.primary,
+    fontWeight: 'bold',
+  },
+  outputCountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  },
+  outputCountButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: theme.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  outputCountButtonSelected: {
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
+  },
+  outputCountText: {
+    fontSize: 18,
+    color: theme.text,
+    fontWeight: '600',
+  },
+  outputCountTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });

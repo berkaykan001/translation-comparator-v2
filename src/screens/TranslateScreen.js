@@ -1,7 +1,7 @@
 // Translation mode screen
 // Translates text between selected languages using multiple AI models
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,23 +20,24 @@ import AIOutputWindow from '../components/AIOutputWindow';
 import BannerAd from '../components/BannerAd';
 import { callAllModels } from '../services/aiService';
 import { buildTranslationPrompt } from '../utils/promptBuilder';
-
-// Language mapping
-const LANGUAGE_NAMES = {
-  es: 'Spanish',
-  fr: 'French',
-  tr: 'Turkish',
-};
+import { getLanguageByCode } from '../config/languages';
 
 export default function TranslateScreen() {
   const [inputText, setInputText] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('es'); // Default: Spanish
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
   const [outputs, setOutputs] = useState([]);
   const { theme } = useTheme();
-  const { getEnabledModels } = useSettings();
+  const { settings, getSelectedModels } = useSettings();
   const { canTranslate, incrementCount, getRemainingTranslations } = useUsageLimit();
   const { isPremium } = useAuth();
   const styles = createCommonStyles(theme);
+
+  // Set the first target language as default when settings load
+  useEffect(() => {
+    if (settings.targetLanguages && settings.targetLanguages.length > 0 && !selectedLanguage) {
+      setSelectedLanguage(settings.targetLanguages[0]);
+    }
+  }, [settings.targetLanguages]);
 
   const handleTranslate = async () => {
     // Validation
@@ -63,11 +64,11 @@ export default function TranslateScreen() {
 
     console.log('Translating:', inputText, 'to', selectedLanguage);
 
-    // Get enabled models from settings context
-    const enabledModels = getEnabledModels();
+    // Get selected models for translation mode from settings
+    const modelsToUse = getSelectedModels('translate');
 
     // Initialize outputs with loading state
-    const initialOutputs = enabledModels.map((model) => ({
+    const initialOutputs = modelsToUse.map((model) => ({
       modelId: model.id,
       modelName: model.name,
       text: null,
@@ -78,12 +79,13 @@ export default function TranslateScreen() {
     // Increment usage count (for free users)
     await incrementCount();
 
-    // Build prompt
-    const targetLanguage = LANGUAGE_NAMES[selectedLanguage];
-    const prompt = buildTranslationPrompt(inputText, 'English', targetLanguage);
+    // Build prompt using settings
+    const sourceLanguage = getLanguageByCode(settings.nativeLanguage).name;
+    const targetLanguage = getLanguageByCode(selectedLanguage).name;
+    const prompt = buildTranslationPrompt(inputText, sourceLanguage, targetLanguage);
 
-    // Get enabled model IDs
-    const enabledModelIds = enabledModels.map((model) => model.id);
+    // Get model IDs to call
+    const modelIds = modelsToUse.map((model) => model.id);
 
     // Call all models asynchronously
     await callAllModels(
@@ -102,40 +104,38 @@ export default function TranslateScreen() {
           });
         });
       },
-      enabledModelIds
+      modelIds
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        {/* Language selector tabs */}
-        <View style={styles.languageTabs}>
-          <TouchableOpacity
-            style={[styles.langTab, selectedLanguage === 'es' && styles.langTabActive]}
-            onPress={() => setSelectedLanguage('es')}
-          >
-            <Text style={[styles.langTabText, selectedLanguage === 'es' && styles.langTabTextActive]}>
-              Spanish
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.langTab, selectedLanguage === 'fr' && styles.langTabActive]}
-            onPress={() => setSelectedLanguage('fr')}
-          >
-            <Text style={[styles.langTabText, selectedLanguage === 'fr' && styles.langTabTextActive]}>
-              French
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.langTab, selectedLanguage === 'tr' && styles.langTabActive]}
-            onPress={() => setSelectedLanguage('tr')}
-          >
-            <Text style={[styles.langTabText, selectedLanguage === 'tr' && styles.langTabTextActive]}>
-              Turkish
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Language selector tabs - dynamically generated from settings */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.languageTabsContainer}
+          contentContainerStyle={[
+            styles.languageTabs,
+            settings.targetLanguages.length < 4 && styles.languageTabsCentered
+          ]}
+        >
+          {settings.targetLanguages.map((langCode) => {
+            const language = getLanguageByCode(langCode);
+            return (
+              <TouchableOpacity
+                key={langCode}
+                style={[styles.langTab, selectedLanguage === langCode && styles.langTabActive]}
+                onPress={() => setSelectedLanguage(langCode)}
+              >
+                <Text style={[styles.langTabText, selectedLanguage === langCode && styles.langTabTextActive]}>
+                  {language.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         {/* Input box */}
         <View style={styles.inputContainer}>

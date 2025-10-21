@@ -11,21 +11,27 @@ export const createCommonStyles = (theme) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  languageTabsContainer: {
+    backgroundColor: theme.backgroundSecondary,
+  },
   languageTabs: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: theme.backgroundSecondary,
+  },
+  languageTabsCentered: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   langTab: {
-    flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     marginHorizontal: 5,
     backgroundColor: theme.cardBackground,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.border,
     alignItems: 'center',
+    minWidth: 100,
   },
   langTabActive: {
     backgroundColor: theme.primary,
@@ -85,5 +91,17 @@ export const createCommonStyles = (theme) => StyleSheet.create({
   },
   adPlaceholder: {
     color: theme.adText,
+  },
+  usageCounter: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  usageCounterText: {
+    color: theme.textSecondary,
+    fontSize: 14,
+  },
+  usageCounterContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
   },
 });
