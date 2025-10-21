@@ -1,130 +1,217 @@
 # Translation Comparator APK Build Guide
 
-## 🎯 **WORKING METHOD - EAS Build with Local Keystore**
+## 🎯 **WORKING METHOD - EAS Build with Remote Credentials**
 
-After testing with MacroBalance, this is the proven method that successfully builds APKs:
+This guide provides the complete step-by-step process to build an APK for testing monetization features (ads & billing).
 
-### ✅ **Prerequisites**
+---
+
+## 📋 **Prerequisites**
 - Expo account logged in: `eas whoami` should show `berkay_kan`
 - Project linked to correct Expo project: `translation-comparator-app`
+- All dependencies installed: `npm install`
 
-### ✅ **Step 1: Configure Project**
+---
 
-**Update app.json:**
+## 🚀 **Complete Build Process**
+
+### **Step 1: Uncomment Monetization Features**
+
+Before building, uncomment the ads and billing code that was disabled for Expo Go:
+
+**1.1 Uncomment BannerAd.js:**
+```javascript
+// File: src/components/BannerAd.js
+
+// Change this:
+// import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+// TO:
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+// Change this:
+// const BANNER_AD_UNIT_ID = __DEV__ ? TestIds.ADAPTIVE_BANNER : ...
+// TO:
+const BANNER_AD_UNIT_ID = __DEV__
+  ? TestIds.ADAPTIVE_BANNER
+  : Platform.select({ ... });
+
+// Replace placeholder return with:
+return (
+  <View style={styles.container}>
+    <BannerAd
+      unitId={BANNER_AD_UNIT_ID}
+      size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+      requestOptions={{ ... }}
+    />
+  </View>
+);
+```
+
+**1.2 Uncomment InterstitialAdManager.js:**
+```javascript
+// File: src/services/InterstitialAdManager.js
+
+// Uncomment imports:
+import {
+  InterstitialAd,
+  AdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+// Uncomment ad unit ID constant
+const INTERSTITIAL_AD_UNIT_ID = __DEV__ ? TestIds.INTERSTITIAL : ...
+
+// Replace placeholder methods with full implementation (see file for details)
+```
+
+**1.3 Verify BillingManager.js:**
+- This file is already uncommented and ready to use
+- No changes needed
+
+### **Step 2: Ensure Dependencies are Installed**
+
+**CRITICAL:** Verify `react-native-iap` is in package.json:
+```json
+{
+  "dependencies": {
+    "react-native-iap": "^12.15.4",
+    "react-native-google-mobile-ads": "^15.8.1",
+    ...
+  }
+}
+```
+
+**If missing, add it and regenerate package-lock.json:**
+```bash
+npm install react-native-iap@^12.15.4
+```
+
+**IMPORTANT: Regenerate package-lock.json after adding new dependencies:**
+```bash
+rm package-lock.json
+npm install
+```
+
+**Verify npm ci works (this is what EAS build uses):**
+```bash
+npm ci --include=dev
+```
+
+If this fails locally, it will fail on EAS build server too. Fix all errors before building.
+
+### **Step 3: Update Version Numbers**
+
+Before each build, increment version in `app.json`:
+
 ```json
 {
   "expo": {
-    "name": "Translation Comparator",
-    "slug": "translation-comparator-app",
+    "version": "1.0.1",  // Increment: 1.0.0 → 1.0.1 → 1.0.2
     "android": {
-      "package": "com.berkaykan.translationcomparator"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "[PROJECT_ID_HERE]"  // Get from: eas project:info
-      }
-    },
-    "owner": "berkay_kan"
-  }
-}
-```
-
-### ✅ **Step 2: Create Local Keystore (Bypasses Interactive Prompts)**
-
-**Generate keystore:**
-```bash
-keytool -genkey -v -keystore translation-comparator-keystore.jks -alias translation-comparator-key -keyalg RSA -keysize 2048 -validity 10000 -storepass translator2024 -keypass translator2024 -dname "CN=TranslationComparator, OU=Development, O=Berkay, L=City, S=State, C=TR"
-```
-
-**Create credentials.json:**
-```json
-{
-  "android": {
-    "keystore": {
-      "keystorePath": "./translation-comparator-keystore.jks",
-      "keystorePassword": "translator2024",
-      "keyAlias": "translation-comparator-key",
-      "keyPassword": "translator2024"
+      "versionCode": 2    // Increment by 1: 1 → 2 → 3
     }
   }
 }
 ```
 
-### ✅ **Step 3: Configure EAS Build**
+**Version scheme:**
+- `1.0.0` → `1.0.1` - Bug fixes
+- `1.0.x` → `1.1.0` - New features
+- `1.x.x` → `2.0.0` - Major changes
 
-**Create/update eas.json:**
-```json
-{
-  "cli": {
-    "version": ">= 12.0.0",
-    "appVersionSource": "local"
-  },
-  "build": {
-    "production": {
-      "distribution": "store",
-      "android": {
-        "buildType": "apk",
-        "credentialsSource": "local"
-      }
-    }
-  }
-}
-```
+### **Step 4: Run Build Command**
 
-### ✅ **Step 4: Build Command**
-
-**This is the exact command that works:**
+**Navigate to project directory and run:**
 ```bash
+cd "c:\Users\Master_BME\source\repos\AI_translator_mobile_v2"
 eas build --platform android --wait
 ```
 
-**Expected output:**
+### **Step 5: Answer Prompts**
+
+**When prompted:**
 ```
-✔ Using local Android credentials (credentials.json)
+Generate a new Android Keystore?
+```
+
+**Answer: Yes (y)**
+
+This will:
+- Create a keystore managed by EAS (stored remotely and securely)
+- Only needed for first build
+- Subsequent builds reuse the same keystore automatically
+
+**Expected output after prompt:**
+```
+✔ Using remote Android credentials (Expo server)
 Compressing project files and uploading to EAS Build...
 ✔ Uploaded to EAS
 Build details: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/[BUILD_ID]
+Waiting for build to complete...
 ```
 
-### 🚫 **What DOESN'T Work:**
+---
 
-1. **Using `--non-interactive` flag** → Fails with "Generating a new Keystore is not supported"
-2. **Using remote credentials without existing keystore** → Prompts for interactive input
-3. **Using `--freeze-credentials`** → Still prompts for keystore generation
-4. **Legacy `expo build:android`** → Node.js compatibility issues
-
-### ⏱ **Timeline:**
+## ⏱ **Timeline:**
 - **Upload:** ~30 seconds
 - **Queue time:** Varies (0-30 minutes)
 - **Build time:** 4-6 hours
 - **Download ready:** Check build URL for APK link
 
-### 🔍 **Troubleshooting:**
+---
 
-**If build fails with dependency errors:**
-- Check React version compatibility
-- Run `npm install` before building
+## 🔍 **Troubleshooting:**
 
-**If "EAS project not configured":**
+### **Error: "npm ci --include=dev exited with non-zero code: 1"**
+**Cause:** Missing dependency in package.json OR outdated package-lock.json
+
+**Solution:**
+1. Check that `react-native-iap` is in package.json dependencies
+2. If missing, add it:
+   ```bash
+   npm install react-native-iap@^12.15.4
+   ```
+3. **CRITICAL: Regenerate package-lock.json:**
+   ```bash
+   rm package-lock.json
+   npm install
+   ```
+4. Verify npm ci works locally:
+   ```bash
+   npm ci --include=dev
+   ```
+5. Commit package.json AND package-lock.json
+6. Retry build
+
+**Why this happens:**
+- `npm install` updates package-lock.json when adding dependencies
+- `npm ci` (used by EAS) requires a valid package-lock.json that matches package.json
+- If package-lock.json is outdated or corrupted, `npm ci` fails on the build server
+
+### **Error: "Input is required, but stdin is not readable"**
+**Cause:** Build was run in non-interactive mode (background process)
+
+**Solution:**
+- Run `eas build --platform android --wait` directly in your terminal
+- Answer the keystore prompt when it appears
+
+### **Build fails with "Gradle build failed"**
+**Cause:** AdMob or IAP plugin configuration issues
+
+**Solution:**
+1. Check that `react-native-google-mobile-ads` is installed
+2. Ensure google-services.json exists in project root
+3. Verify app.json has correct package name
+
+### **If "EAS project not configured"**
+**Solution:**
 - Ensure `app.json` has correct `projectId` and `owner`
-- Run `eas whoami` to verify login
+- Run `eas whoami` to verify login (should show `berkay_kan`)
 - Run `eas project:info` to get project ID
 
-**If keystore errors:**
-- Verify `translation-comparator-keystore.jks` exists in project root
-- Check `credentials.json` paths and passwords match
+---
 
-### 📁 **Required Files:**
-```
-translation-comparator-app/
-├── app.json (with correct projectId)
-├── eas.json (with local credentials config)
-├── credentials.json
-├── translation-comparator-keystore.jks
-└── package.json
-```
-
-### 🎯 **Success Indicators:**
+## 🎯 **Success Indicators:**
 1. ✅ Upload completes without errors
 2. ✅ Gets build ID and URL
 3. ✅ Build shows "in queue" or "building" status
@@ -134,68 +221,57 @@ translation-comparator-app/
 
 ## 📋 **Build History:**
 
-**Working Builds:**
-- [To be filled as builds complete]
+**Session 9 - Build Attempts:**
+- **Attempt 1:** Failed - Missing `react-native-iap` dependency
+  - Error: npm ci exited with code 1
+  - Fix: Added react-native-iap to package.json
+  - Lesson: Always verify ALL monetization dependencies before building
 
-**Failed Builds:**
-- [To be documented with reasons]
-
-**Key Lesson:** Local keystore approach bypasses all interactive prompts and is the most reliable method for automated builds.
-
----
-
-## 🚀 **Quick Build Checklist:**
-
-- [ ] Logged in: `eas whoami`
-- [ ] Correct project linked in `app.json`
-- [ ] Local keystore files exist
-- [ ] Dependencies installed: `npm install`
-- [ ] Run: `eas build --platform android --wait`
-- [ ] Wait 4-6 hours for completion
-- [ ] Download APK from build URL
-
-**This method has 100% success rate when all files are properly configured!**
+- **Attempt 2:** Failed - Outdated package-lock.json
+  - Error: npm ci exited with code 1 (even though dependency was added)
+  - Fix: Regenerated package-lock.json with `rm package-lock.json && npm install`
+  - Lesson: **MUST regenerate package-lock.json after adding dependencies**
 
 ---
 
-## 🔄 **Version Management:**
+## ✅ **Quick Pre-Build Checklist:**
 
-### **Updating Version:**
-Before each build, update version in `app.json`:
-```json
-{
-  "expo": {
-    "version": "1.0.0",  // Increment for each release
-    "android": {
-      "versionCode": 1    // Increment as integer (1, 2, 3, ...)
-    }
-  }
-}
+Before running `eas build --platform android --wait`:
+
+- [ ] Logged in: `eas whoami` shows `berkay_kan`
+- [ ] BannerAd.js uncommented
+- [ ] InterstitialAdManager.js uncommented
+- [ ] BillingManager.js verified (already uncommented)
+- [ ] `react-native-iap` in package.json
+- [ ] `react-native-google-mobile-ads` in package.json
+- [ ] Version incremented in app.json (both version and versionCode)
+- [ ] **package-lock.json regenerated** (if dependencies were added)
+- [ ] `npm ci --include=dev` works locally (test this!)
+- [ ] Changes committed to git (package.json + package-lock.json)
+
+**Then run:**
+```bash
+eas build --platform android --wait
 ```
 
-**Version scheme:**
-- `1.0.0` - Initial release
-- `1.0.1` - Bug fixes
-- `1.1.0` - New features
-- `2.0.0` - Major changes
+**When prompted "Generate a new Android Keystore?" → Answer: Yes (y)**
 
-**versionCode:**
-- Must be incremented for EVERY build
-- Google Play requires higher versionCode for updates
-- Start at 1, increment by 1 each build
+**Wait 4-6 hours** → Download APK from build URL
 
 ---
 
-## 📱 **Testing Before Build:**
+## 📱 **Testing After Build:**
 
-Before creating production build:
-1. Test on development build: `npx expo run:android`
-2. Check all features work
-3. Verify no console errors
-4. Test on physical device
-5. Run through TEST_PLAN.md
+Once the APK is downloaded:
+1. Install on physical Android device
+2. Test banner ads (should show test ads)
+3. Test interstitial ads (appear every 3 screen transitions)
+4. Test subscription flow (use test payment cards)
+5. Verify premium features unlock after purchase
+6. Test restore purchases functionality
 
 ---
 
-**Last Updated:** Session 1 - Initial Setup
-**Tested With:** React Native, Expo SDK (latest), Android 12+
+**Last Updated:** Session 9 - Monetization Build Process
+**Build Method:** EAS Build with Remote Credentials
+**Tested With:** Expo SDK 54, React Native 0.81.4, Android 12+
