@@ -124,10 +124,53 @@ Settings were saving correctly but screens weren't reading them. All screens use
 
 ---
 
-**Status:** Phase 7 In Progress - Settings Integration Complete
+## 📅 **Session 9** - October 21, 2025 ✅
+
+**Phase 7: Bug Fixes - Scrolling & Keyboard Issues**
+
+### **Bugs Fixed:**
+
+**Bug 1: Output Window Vertical Scrolling** ✅
+- **Issue:** Output windows only scrolled vertically when keyboard was visible
+- **Root Cause:** TouchableOpacity wrapped entire card, capturing all touch events
+- **Solution:**
+  - Changed card wrapper from TouchableOpacity to View
+  - Moved tap-to-copy TouchableOpacity to wrap only text content
+  - Added keyboardShouldPersistTaps='handled' to vertical ScrollView
+
+**Bug 2: Keyboard Double-Tap Issue** ✅
+- **Issue:** With keyboard visible, actions required two taps (first dismissed keyboard, second triggered action)
+- **Solution (2-part fix):**
+  - Added keyboardShouldPersistTaps='handled' to all ScrollView components
+  - Added Keyboard.dismiss() to all action handlers
+
+**Implementation Details:**
+- Created KEYBOARD_BUG_TRACKING.md to track attempts (deleted after successful fix)
+- Researched React Native keyboard best practices online
+- Applied fixes systematically across all screens
+
+**Files Modified:**
+- `src/components/AIOutputWindow.js` - Restructured for proper scrolling + keyboard handling
+- `src/screens/TranslateScreen.js` - Added Keyboard.dismiss() to handleTranslate() and tab handlers
+- `src/screens/GrammarScreen.js` - Added Keyboard.dismiss() to handleCheckGrammar()
+- `src/screens/UsageScreen.js` - Added Keyboard.dismiss() to handleAnalyzeUsage()
+- `src/components/FollowUpInput.js` - Added Keyboard.dismiss() to handleSubmit()
+- `PROJECT_PLAN.md` - Updated Phase 7 progress
+- `PROJECT_RULES.md` - Updated last modified date
+
+**Results:**
+- ✅ Output windows now scroll vertically regardless of keyboard state
+- ✅ Single tap triggers actions AND dismisses keyboard
+- ✅ Improved user experience with immediate feedback
+- ✅ Keyboard dismisses when switching language tabs
+- ✅ Tap-to-copy functionality preserved
+
+---
+
+**Status:** Phase 7 In Progress - Bug Fixes Complete
 
 ---
 
 ## 🔄 **Next Session:**
-- Continue Phase 7: Full testing, performance optimization, bug fixes
+- Continue Phase 7: Full testing, performance optimization, remaining bug fixes
 - Or build APK to test monetization features

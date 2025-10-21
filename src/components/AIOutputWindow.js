@@ -54,13 +54,12 @@ export default function AIOutputWindow({ outputs = [], showFollowUp = false, onF
         showsHorizontalScrollIndicator={true}
         contentContainerStyle={styles.horizontalScrollContent}
         style={styles.horizontalScroll}
+        keyboardShouldPersistTaps='handled'
       >
         {outputs.map((output, index) => (
-          <TouchableOpacity
+          <View
             key={index}
             style={[styles.outputCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
-            onPress={() => handleCopyToClipboard(output.text, output.modelName)}
-            activeOpacity={0.7}
           >
             {/* Model name at top */}
             <View style={[styles.modelNameContainer, { borderBottomColor: theme.border }]}>
@@ -74,6 +73,7 @@ export default function AIOutputWindow({ outputs = [], showFollowUp = false, onF
               style={styles.verticalScroll}
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled={true}
+              keyboardShouldPersistTaps='handled'
             >
               {output.loading ? (
                 <View style={styles.loadingContainer}>
@@ -83,14 +83,18 @@ export default function AIOutputWindow({ outputs = [], showFollowUp = false, onF
                   </Text>
                 </View>
               ) : output.text ? (
-                <View style={styles.textContainer}>
+                <TouchableOpacity
+                  style={styles.textContainer}
+                  onPress={() => handleCopyToClipboard(output.text, output.modelName)}
+                  activeOpacity={0.7}
+                >
                   <Text style={[styles.outputText, { color: theme.text }]}>
                     {output.text}
                   </Text>
                   <Text style={[styles.tapToCopyHint, { color: theme.textPlaceholder }]}>
                     Tap to copy
                   </Text>
-                </View>
+                </TouchableOpacity>
               ) : (
                 <Text style={[styles.emptyText, { color: theme.textPlaceholder }]}>
                   No response yet
@@ -106,7 +110,7 @@ export default function AIOutputWindow({ outputs = [], showFollowUp = false, onF
                 placeholder="Ask a follow-up question..."
               />
             )}
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>

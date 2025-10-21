@@ -10,6 +10,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -40,6 +41,9 @@ export default function TranslateScreen() {
   }, [settings.targetLanguages]);
 
   const handleTranslate = async () => {
+    // Dismiss keyboard
+    Keyboard.dismiss();
+
     // Validation
     if (!inputText.trim()) {
       Alert.alert('Error', 'Please enter some text to translate');
@@ -110,7 +114,10 @@ export default function TranslateScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        keyboardShouldPersistTaps='handled'
+      >
         {/* Language selector tabs - dynamically generated from settings */}
         <ScrollView
           horizontal
@@ -120,6 +127,7 @@ export default function TranslateScreen() {
             styles.languageTabs,
             settings.targetLanguages.length < 4 && styles.languageTabsCentered
           ]}
+          keyboardShouldPersistTaps='handled'
         >
           {settings.targetLanguages.map((langCode) => {
             const language = getLanguageByCode(langCode);
@@ -127,7 +135,10 @@ export default function TranslateScreen() {
               <TouchableOpacity
                 key={langCode}
                 style={[styles.langTab, selectedLanguage === langCode && styles.langTabActive]}
-                onPress={() => setSelectedLanguage(langCode)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setSelectedLanguage(langCode);
+                }}
               >
                 <Text style={[styles.langTabText, selectedLanguage === langCode && styles.langTabTextActive]}>
                   {language.name}

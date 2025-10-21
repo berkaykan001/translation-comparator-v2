@@ -579,12 +579,14 @@ Respond in ${userNativeLanguage}.`;
 
 ---
 
-### **Phase 7: Polish & Testing** ✅ IN PROGRESS (Session 8)
+### **Phase 7: Polish & Testing** ✅ IN PROGRESS (Sessions 8-9)
 - [x] Fixed settings integration (language/AI model settings now properly trigger actions)
 - [x] Redesigned settings structure (per-mode AI model selection)
 - [x] Settings migration logic (old → new format)
 - [x] Language tabs overflow fix (horizontal ScrollView)
 - [x] UI improvements (centered tabs, compact display)
+- [x] Fixed output window vertical scrolling (Bug 1)
+- [x] Fixed keyboard double-tap issue (Bug 2)
 - [ ] Run full test plan
 - [ ] Performance optimization
 - [ ] Final bug fixes
@@ -594,6 +596,9 @@ Respond in ${userNativeLanguage}.`;
 - [x] Language selection works properly
 - [x] AI model selection per mode works
 - [x] Settings persist across app restarts
+- [x] Output windows scroll vertically without keyboard
+- [x] Single tap triggers actions when keyboard is visible
+- [x] Keyboard dismisses properly when actions are triggered
 - [ ] Complete TEST_PLAN.md
 - [ ] No critical bugs
 - [ ] App performs smoothly
@@ -685,5 +690,5 @@ Respond in ${userNativeLanguage}.`;
 
 ---
 
-**Last Updated:** Session 8 - Phase 7 Settings Integration & UI Polish
+**Last Updated:** Session 9 - Phase 7 Bug Fixes (Scrolling & Keyboard)
 **Status:** In Development - Phase 7 (Polish & Testing)

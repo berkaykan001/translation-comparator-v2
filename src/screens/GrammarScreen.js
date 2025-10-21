@@ -11,6 +11,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -33,6 +34,9 @@ export default function GrammarScreen() {
   const styles = createCommonStyles(theme);
 
   const handleCheckGrammar = async () => {
+    // Dismiss keyboard
+    Keyboard.dismiss();
+
     // Validation
     if (!inputText.trim()) {
       Alert.alert('Error', 'Please enter some text to check');
@@ -161,7 +165,10 @@ export default function GrammarScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        keyboardShouldPersistTaps='handled'
+      >
         {/* Input box */}
         <View style={[styles.inputContainer, { marginTop: 10 }]}>
           <TextInput

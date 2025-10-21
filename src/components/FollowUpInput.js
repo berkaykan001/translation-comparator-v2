@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,6 +28,9 @@ export default function FollowUpInput({ onSubmit, modelId, placeholder = "Ask a 
 
   const handleSubmit = () => {
     if (question.trim().length === 0) return;
+
+    // Dismiss keyboard
+    Keyboard.dismiss();
 
     // Call the onSubmit callback with the question
     if (onSubmit) {
