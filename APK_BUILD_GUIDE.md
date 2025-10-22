@@ -298,14 +298,26 @@ Waiting for build to complete...
   - Error: `npx expo export:embed --eager --platform android --dev false exited with non-zero code: 1`
   - Full error: `import "/home/expo/workingdir/build/index.js"`
   - **Progress:** ✅ npm ci passed, ✅ upload succeeded, ❌ JavaScript bundling failed
-  - Root Cause: **TO BE INVESTIGATED IN SESSION 10**
-  - Possible causes:
-    - Missing index.js file in project root
-    - Expo config issue with entry point
-    - JavaScript syntax error preventing bundling
-    - Missing or misconfigured babel/metro config
+  - Root Cause: **apiKeys.js was gitignored and missing on EAS build server**
+  - Investigation: All AI service files import from `src/config/apiKeys.js`
+  - Local bundling test: `npx expo export:embed --platform android` worked perfectly
+  - Fix: Created placeholder apiKeys.js with environment variable support, committed to repo
   - Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/e236726f-dc3a-4966-8620-b01b9e88d83d
   - **Status:** First time getting past npm ci! This is a different type of error (bundling, not dependencies)
+
+**Session 10 - Build Attempts:**
+- **Attempt 6:** Failed - Gradle build with react-native-iap flavor ambiguity
+  - Error: `Could not determine the dependencies of task ':app:mergeReleaseNativeLibs'`
+  - Gradle error: Cannot choose between react-native-iap variants (amazonReleaseRuntimeElements vs playReleaseRuntimeElements)
+  - Root Cause: **react-native-iap provides separate builds for Google Play and Amazon App Store**
+  - Gradle cannot decide which flavor to use because consumer doesn't specify 'store' attribute
+  - **Progress:** ✅ apiKeys.js fixed, ✅ npm ci passed, ✅ upload succeeded, ❌ Gradle build failed with flavor ambiguity
+  - Possible solutions:
+    - Add product flavor configuration to android/app/build.gradle
+    - Specify missingDimensionStrategy for 'store' dimension
+    - Configure build to use 'play' flavor for Google Play Store builds
+  - Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/e0fadc31-bd0f-4ad2-877a-641622861d62
+  - **Status:** TO BE INVESTIGATED IN SESSION 11
 
 ---
 
@@ -367,6 +379,6 @@ Once the APK is downloaded:
 
 ---
 
-**Last Updated:** Session 9 - Monetization Build Process
+**Last Updated:** Session 10 - Build Attempt 6 (Gradle IAP Flavor Issue)
 **Build Method:** EAS Build with Remote Credentials
 **Tested With:** Expo SDK 54, React Native 0.81.4, Android 12+

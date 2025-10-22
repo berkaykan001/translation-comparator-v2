@@ -234,7 +234,87 @@ Settings were saving correctly but screens weren't reading them. All screens use
 
 ---
 
+## 📅 **Session 10** - October 22, 2025 ✅
+
+**Phase 7: APK Build Attempt 6 - Gradle IAP Flavor Issue**
+
+### **Part 1: Investigation of Build Attempt 5 Failure**
+
+**Issue Diagnosed:** ✅
+- Build Attempt 5 failed at JavaScript bundling phase
+- Root cause: `src/config/apiKeys.js` was gitignored and not available on EAS build server
+- All 8 AI service files import from this file, causing bundler to fail
+- **Evidence:** Local bundling test (`npx expo export:embed --platform android`) worked perfectly
+
+**Solution Implemented:**
+1. Backed up real API keys to `apiKeys.local.js` (gitignored)
+2. Created placeholder `apiKeys.js` with environment variable support:
+   - Uses `process.env.EXPO_PUBLIC_*_API_KEY` for production builds
+   - Falls back to placeholder values if env vars not set
+   - File committed to repository for EAS build server
+3. Updated `.gitignore` to protect `apiKeys.local.js` instead
+
+**Files Modified:**
+- `src/config/apiKeys.js` - Created with placeholder keys + env var support
+- `src/config/apiKeys.local.js` - Real API keys (gitignored, local only)
+- `.gitignore` - Changed from apiKeys.js to apiKeys.local.js
+
+**Commit:** df9c3e9 - "Fix APK Build: Add Placeholder API Keys for EAS Build"
+
+---
+
+### **Part 2: Build Attempt 6**
+
+**Attempt 6:** ❌ Gradle build with react-native-iap flavor ambiguity
+- Error: `Could not determine the dependencies of task ':app:mergeReleaseNativeLibs'`
+- Gradle error: Cannot choose between react-native-iap variants
+  - `amazonReleaseRuntimeElements` (Amazon App Store)
+  - `playReleaseRuntimeElements` (Google Play Store)
+- Root Cause: **react-native-iap provides separate builds for different app stores**
+- Gradle cannot decide which flavor to use because consumer doesn't specify 'store' attribute
+- **Progress:** ✅ apiKeys.js fixed, ✅ npm ci passed, ✅ upload succeeded, ❌ Gradle build failed
+- Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/e0fadc31-bd0f-4ad2-877a-641622861d62
+
+**Possible Solutions (for Session 11):**
+- Add product flavor configuration to `android/app/build.gradle`
+- Specify `missingDimensionStrategy` for 'store' dimension
+- Configure build to use 'play' flavor for Google Play Store builds
+
+---
+
+### **Documentation Updates:**
+
+**APK_BUILD_GUIDE.md:**
+- Updated Attempt 5 with root cause and fix (apiKeys.js issue)
+- Added Attempt 6 with Gradle flavor ambiguity details
+- Updated "Last Updated" to Session 10
+
+**SESSION_CHANGELOG.md:**
+- Added Session 10 documentation
+
+---
+
+### **Progress:**
+
+**Completed:**
+- ✅ Fixed apiKeys.js missing on EAS build server
+- ✅ Created environment variable support for production API keys
+- ✅ Completed Build Attempt 6 (new error discovered)
+- ✅ Updated all documentation
+
+**Still To Do (Session 11):**
+- ❌ Fix react-native-iap Gradle flavor configuration
+- ❌ Successfully build APK
+- ❌ Test monetization features on device
+
+---
+
+**Status:** Phase 7 In Progress - Gradle IAP flavor issue identified
+
+---
+
 ## 🔄 **Next Session:**
-- Investigate and fix JavaScript bundling error (Attempt 5)
+- Fix react-native-iap Gradle flavor ambiguity
+- Configure build to use Google Play Store flavor
 - Successfully build APK
 - Test ads and billing on physical device
