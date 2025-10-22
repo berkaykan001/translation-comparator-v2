@@ -124,53 +124,117 @@ Settings were saving correctly but screens weren't reading them. All screens use
 
 ---
 
-## 📅 **Session 9** - October 21, 2025 ✅
+## 📅 **Session 9** - October 21-22, 2025 ✅
 
-**Phase 7: Bug Fixes - Scrolling & Keyboard Issues**
+**Phase 7: Bug Fixes + APK Build Attempts**
 
-### **Bugs Fixed:**
+### **Part 1: Critical Bug Fixes**
 
 **Bug 1: Output Window Vertical Scrolling** ✅
-- **Issue:** Output windows only scrolled vertically when keyboard was visible
-- **Root Cause:** TouchableOpacity wrapped entire card, capturing all touch events
-- **Solution:**
-  - Changed card wrapper from TouchableOpacity to View
-  - Moved tap-to-copy TouchableOpacity to wrap only text content
-  - Added keyboardShouldPersistTaps='handled' to vertical ScrollView
+- Issue: Windows only scrolled when keyboard visible
+- Fix: Moved TouchableOpacity inside ScrollView
+- Result: Smooth scrolling in all states
 
 **Bug 2: Keyboard Double-Tap Issue** ✅
-- **Issue:** With keyboard visible, actions required two taps (first dismissed keyboard, second triggered action)
-- **Solution (2-part fix):**
-  - Added keyboardShouldPersistTaps='handled' to all ScrollView components
-  - Added Keyboard.dismiss() to all action handlers
-
-**Implementation Details:**
-- Created KEYBOARD_BUG_TRACKING.md to track attempts (deleted after successful fix)
-- Researched React Native keyboard best practices online
-- Applied fixes systematically across all screens
+- Issue: Required 2 taps when keyboard visible
+- Fix: keyboardShouldPersistTaps='handled' + Keyboard.dismiss()
+- Result: Single tap works, keyboard dismisses properly
 
 **Files Modified:**
-- `src/components/AIOutputWindow.js` - Restructured for proper scrolling + keyboard handling
-- `src/screens/TranslateScreen.js` - Added Keyboard.dismiss() to handleTranslate() and tab handlers
-- `src/screens/GrammarScreen.js` - Added Keyboard.dismiss() to handleCheckGrammar()
-- `src/screens/UsageScreen.js` - Added Keyboard.dismiss() to handleAnalyzeUsage()
-- `src/components/FollowUpInput.js` - Added Keyboard.dismiss() to handleSubmit()
-- `PROJECT_PLAN.md` - Updated Phase 7 progress
-- `PROJECT_RULES.md` - Updated last modified date
+- src/components/AIOutputWindow.js
+- src/screens/TranslateScreen.js
+- src/screens/GrammarScreen.js
+- src/screens/UsageScreen.js
+- src/components/FollowUpInput.js
 
-**Results:**
-- ✅ Output windows now scroll vertically regardless of keyboard state
-- ✅ Single tap triggers actions AND dismisses keyboard
-- ✅ Improved user experience with immediate feedback
-- ✅ Keyboard dismisses when switching language tabs
-- ✅ Tap-to-copy functionality preserved
+**Commit:** 7803d34 - "Fix Phase 7 Critical Bugs: Scrolling & Keyboard Issues"
 
 ---
 
-**Status:** Phase 7 In Progress - Bug Fixes Complete
+### **Part 2: APK Build Attempts (5 attempts)**
+
+**Goal:** Build APK to test monetization features (ads & billing)
+
+**Attempt 1:** ❌ Missing `react-native-iap` dependency
+- Error: npm ci exited with code 1
+- Fix: Added react-native-iap to package.json
+
+**Attempt 2:** ❌ Outdated package-lock.json
+- Error: npm ci exited with code 1 (even after adding dependency)
+- Fix: Regenerated package-lock.json (partial - not enough)
+
+**Attempt 3:** ❌ Missing Expo plugin configuration
+- Error: npm ci exited with code 1
+- Root Cause: Empty plugins array in app.json
+- Fix: Added react-native-google-mobile-ads plugin with AdMob App ID
+
+**Attempt 4:** ❌ package-lock.json version mismatch
+- Error: `Missing: @react-native-async-storage/async-storage@1.24.0 from lock file`
+- Root Cause: npm install preserved stale deps from node_modules
+- Fix: `rm -rf node_modules package-lock.json && npm install`
+
+**Attempt 5:** ❌ Bundle JavaScript build phase error
+- Error: `npx expo export:embed --eager --platform android --dev false exited with non-zero code: 1`
+- Progress: ✅ npm ci passed, ✅ upload succeeded, ❌ JavaScript bundling failed
+- Root Cause: TO BE INVESTIGATED (Session 10)
+- Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/e236726f-dc3a-4966-8620-b01b9e88d83d
+
+**Files Modified During Build Attempts:**
+- package.json - Added react-native-iap dependency
+- package-lock.json - Completely regenerated (with node_modules deletion)
+- app.json - Added Expo plugins, incremented version to 1.0.3 (versionCode 4)
+- src/components/BannerAd.js - Uncommented monetization code
+- src/services/InterstitialAdManager.js - Uncommented monetization code
+- APK_BUILD_GUIDE.md - **Complete rewrite with all 5 attempts documented**
+
+**Commits:**
+- 1b1851a - "Prepare for APK Build: Uncomment Monetization + Fix Dependencies"
+- 6137b81 - "Fix APK Build: Add Required Expo Plugin Configuration"
+- c5866ee - "Fix APK Build: Properly Regenerate package-lock.json (Attempt 5)"
+
+---
+
+### **APK_BUILD_GUIDE.md Updates:**
+
+**Complete rewrite with:**
+- ✅ Automation note: Claude runs all commands automatically
+- ✅ Step-by-step build process (6 steps)
+- ✅ All 5 build attempts documented with root causes and fixes
+- ✅ Troubleshooting section for each error type
+- ✅ Pre-build checklist
+- ✅ Proper package-lock.json regeneration method
+- ✅ Expo plugin configuration requirement
+
+**Key Lessons Learned:**
+1. react-native-iap must be in package.json
+2. react-native-google-mobile-ads requires Expo config plugin
+3. package-lock.json regeneration needs BOTH node_modules AND package-lock.json deleted
+4. Always test `npm ci --include=dev` locally before building on EAS
+
+---
+
+### **Progress:**
+
+**Completed:**
+- ✅ Fixed critical UX bugs (scrolling + keyboard)
+- ✅ Uncommented all monetization features
+- ✅ Fixed all dependency issues
+- ✅ Fixed Expo plugin configuration
+- ✅ Got past npm ci on EAS build server (first time!)
+- ✅ Comprehensive APK_BUILD_GUIDE.md documentation
+
+**Still To Do (Session 10):**
+- ❌ Fix JavaScript bundling error
+- ❌ Successfully build APK
+- ❌ Test monetization features on device
+
+---
+
+**Status:** Phase 7 In Progress - Build attempts documented, bundling error to be fixed
 
 ---
 
 ## 🔄 **Next Session:**
-- Continue Phase 7: Full testing, performance optimization, remaining bug fixes
-- Or build APK to test monetization features
+- Investigate and fix JavaScript bundling error (Attempt 5)
+- Successfully build APK
+- Test ads and billing on physical device

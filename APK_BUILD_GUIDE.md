@@ -294,6 +294,19 @@ Waiting for build to complete...
   - Lesson: **MUST delete both node_modules AND package-lock.json for clean regeneration**
   - Why: npm install alone can preserve stale dependencies from existing node_modules
 
+- **Attempt 5:** Failed - Bundle JavaScript build phase error
+  - Error: `npx expo export:embed --eager --platform android --dev false exited with non-zero code: 1`
+  - Full error: `import "/home/expo/workingdir/build/index.js"`
+  - **Progress:** ✅ npm ci passed, ✅ upload succeeded, ❌ JavaScript bundling failed
+  - Root Cause: **TO BE INVESTIGATED IN SESSION 10**
+  - Possible causes:
+    - Missing index.js file in project root
+    - Expo config issue with entry point
+    - JavaScript syntax error preventing bundling
+    - Missing or misconfigured babel/metro config
+  - Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/e236726f-dc3a-4966-8620-b01b9e88d83d
+  - **Status:** First time getting past npm ci! This is a different type of error (bundling, not dependencies)
+
 ---
 
 ## ✅ **Quick Pre-Build Checklist:**
