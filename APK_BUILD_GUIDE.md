@@ -4,6 +4,13 @@
 
 This guide provides the complete step-by-step process to build an APK for testing monetization features (ads & billing).
 
+**⚠️ IMPORTANT: Claude will run all build commands automatically. You only need to:**
+1. Tell Claude to build the APK
+2. Answer any interactive prompts if they appear
+3. Wait for the build to complete (4-6 hours)
+
+Claude will handle: uncommenting code, fixing dependencies, updating versions, committing changes, and starting the build.
+
 ---
 
 ## 📋 **Prerequisites**
@@ -99,7 +106,35 @@ npm ci --include=dev
 
 If this fails locally, it will fail on EAS build server too. Fix all errors before building.
 
-### **Step 3: Update Version Numbers**
+### **Step 3: Configure Expo Plugins**
+
+**CRITICAL:** Add required plugins to app.json for native modules:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-XXXXXXXXXX~YYYYYYYYYY",
+          "iosAppId": "ca-app-pub-XXXXXXXXXX~YYYYYYYYYY"
+        }
+      ]
+    ]
+  }
+}
+```
+
+**How to get your AdMob App ID:**
+1. Go to https://apps.admob.google.com/
+2. Select your app
+3. App settings → App ID (format: ca-app-pub-XXXXXXXXXX~YYYYYYYYYY)
+4. This is different from ad unit IDs!
+
+**Without this plugin:** Build will fail with npm ci error or app will crash on startup.
+
+### **Step 4: Update Version Numbers**
 
 Before each build, increment version in `app.json`:
 
@@ -119,15 +154,15 @@ Before each build, increment version in `app.json`:
 - `1.0.x` → `1.1.0` - New features
 - `1.x.x` → `2.0.0` - Major changes
 
-### **Step 4: Run Build Command**
+### **Step 5: Run Build Command**
 
-**Navigate to project directory and run:**
+**Claude will run this automatically:**
 ```bash
 cd "c:\Users\Master_BME\source\repos\AI_translator_mobile_v2"
 eas build --platform android --wait
 ```
 
-### **Step 5: Answer Prompts**
+### **Step 6: Answer Prompts (if any)**
 
 **When prompted:**
 ```
@@ -232,6 +267,14 @@ Waiting for build to complete...
   - Fix: Regenerated package-lock.json with `rm package-lock.json && npm install`
   - Lesson: **MUST regenerate package-lock.json after adding dependencies**
 
+- **Attempt 3:** Failed - Missing Expo plugin configuration
+  - Error: npm ci exited with code 1 (package-lock.json was correct)
+  - Root Cause: `plugins: []` was empty in app.json
+  - Missing: react-native-google-mobile-ads plugin configuration
+  - Fix: Added plugin with AdMob App ID to app.json plugins array
+  - Lesson: **react-native-google-mobile-ads REQUIRES Expo config plugin or build fails**
+  - Documentation: https://docs.page/invertase/react-native-google-mobile-ads
+
 ---
 
 ## ✅ **Quick Pre-Build Checklist:**
@@ -244,19 +287,39 @@ Before running `eas build --platform android --wait`:
 - [ ] BillingManager.js verified (already uncommented)
 - [ ] `react-native-iap` in package.json
 - [ ] `react-native-google-mobile-ads` in package.json
+- [ ] **Expo plugins configured** in app.json (react-native-google-mobile-ads with App IDs)
 - [ ] Version incremented in app.json (both version and versionCode)
 - [ ] **package-lock.json regenerated** (if dependencies were added)
 - [ ] `npm ci --include=dev` works locally (test this!)
-- [ ] Changes committed to git (package.json + package-lock.json)
+- [ ] Changes committed to git (package.json + package-lock.json + app.json)
 
-**Then run:**
+**Then Claude will automatically run:**
 ```bash
 eas build --platform android --wait
 ```
 
-**When prompted "Generate a new Android Keystore?" → Answer: Yes (y)**
+**If prompted "Generate a new Android Keystore?" → Answer: Yes (y)**
 
 **Wait 4-6 hours** → Download APK from build URL
+
+---
+
+## 🤖 **Automation Note:**
+
+**Claude handles everything automatically.** Just say:
+> "Read APK_BUILD_GUIDE.md and build the APK"
+
+Claude will:
+1. Uncomment monetization code
+2. Verify/add dependencies
+3. Configure Expo plugins
+4. Regenerate package-lock.json
+5. Increment version numbers
+6. Test npm ci locally
+7. Commit all changes
+8. **Run the build command for you**
+
+You only need to answer prompts if EAS asks for input
 
 ---
 
