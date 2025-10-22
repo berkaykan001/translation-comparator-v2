@@ -2,7 +2,7 @@
   "expo": {
     "name": "Translation Comparator",
     "slug": "translation-comparator-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.berkaykan.translationcomparator",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"

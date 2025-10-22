@@ -94,17 +94,27 @@ npm install react-native-iap@^12.15.4
 ```
 
 **IMPORTANT: Regenerate package-lock.json after adding new dependencies:**
+
+**CRITICAL METHOD (Attempt 5 - THE CORRECT WAY):**
 ```bash
-rm package-lock.json
+rm -rf node_modules package-lock.json
 npm install
 ```
 
+**Why delete node_modules too?**
+- npm install can preserve stale dependencies from existing node_modules
+- Clean slate ensures package-lock.json matches package.json exactly
+- Prevents version mismatches on EAS build server
+
 **Verify npm ci works (this is what EAS build uses):**
 ```bash
+rm -rf node_modules
 npm ci --include=dev
 ```
 
-If this fails locally, it will fail on EAS build server too. Fix all errors before building.
+**If npm ci fails:** Delete node_modules + package-lock.json and regenerate.
+
+If npm ci works locally, it will work on EAS build server.
 
 ### **Step 3: Configure Expo Plugins**
 
@@ -206,13 +216,14 @@ Waiting for build to complete...
    ```bash
    npm install react-native-iap@^12.15.4
    ```
-3. **CRITICAL: Regenerate package-lock.json:**
+3. **CRITICAL: Regenerate package-lock.json (PROPER METHOD):**
    ```bash
-   rm package-lock.json
+   rm -rf node_modules package-lock.json
    npm install
    ```
 4. Verify npm ci works locally:
    ```bash
+   rm -rf node_modules
    npm ci --include=dev
    ```
 5. Commit package.json AND package-lock.json
@@ -274,6 +285,14 @@ Waiting for build to complete...
   - Fix: Added plugin with AdMob App ID to app.json plugins array
   - Lesson: **react-native-google-mobile-ads REQUIRES Expo config plugin or build fails**
   - Documentation: https://docs.page/invertase/react-native-google-mobile-ads
+
+- **Attempt 4:** Failed - package-lock.json version mismatch
+  - Error: `Missing: @react-native-async-storage/async-storage@1.24.0 from lock file`
+  - Root Cause: package.json had version 2.2.0 but package-lock.json had stale version
+  - Previous Fix (partial regeneration): `rm package-lock.json && npm install` - NOT ENOUGH
+  - **Proper Fix:** `rm -rf node_modules package-lock.json && npm install`
+  - Lesson: **MUST delete both node_modules AND package-lock.json for clean regeneration**
+  - Why: npm install alone can preserve stale dependencies from existing node_modules
 
 ---
 
