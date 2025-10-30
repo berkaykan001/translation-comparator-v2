@@ -318,3 +318,133 @@ Settings were saving correctly but screens weren't reading them. All screens use
 - Configure build to use Google Play Store flavor
 - Successfully build APK
 - Test ads and billing on physical device
+
+---
+
+## 📅 **Session 11** - October 30, 2025 ✅
+
+**Phase 8: First Successful APK Build**
+
+### **Part 1: Fix Gradle Flavor Issue (Attempt 7)**
+
+**Issue from Session 10:**
+- Build Attempt 6 failed with Gradle error: Cannot choose between react-native-iap variants (amazonReleaseRuntimeElements vs playReleaseRuntimeElements)
+- react-native-iap provides separate builds for Google Play and Amazon App Store
+- Gradle needed to know which flavor to use
+
+**Solution Implemented:**
+1. Installed `expo-build-properties` plugin (v1.0.9)
+2. Created custom Expo config plugin: `plugins/withIAPFlavor.js`
+   - Adds `missingDimensionStrategy 'store', 'play'` to Gradle defaultConfig
+   - Tells Gradle to use Google Play Store flavor
+3. Created `app.config.js` to apply the custom plugin
+4. Incremented version to 1.0.4 (versionCode 5)
+
+**Files Created:**
+- `app.config.js` - Expo configuration that applies custom plugin
+- `plugins/withIAPFlavor.js` - Custom plugin for Gradle configuration
+
+**Files Modified:**
+- `app.json` - Added expo-build-properties plugin, incremented version
+- `package.json` - Added expo-build-properties dependency
+- `package-lock.json` - Regenerated
+
+**Build Attempt 7 Result:** ❌ Failed
+- Error: Kotlin compilation error in react-native-iap
+- Lines 464 & 540: `Unresolved reference 'currentActivity'`, type mismatch
+- Root Cause: **react-native-iap v12.15.4 incompatible with React Native 0.81.4**
+- **Progress:** ✅ Gradle flavor issue FIXED! Now correctly uses 'play' flavor
+- Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/efde484d-7647-4802-bc3e-b6054098ef4e
+
+---
+
+### **Part 2: Fix Kotlin Compilation Error (Attempt 8)**
+
+**Investigation:**
+- Checked latest react-native-iap versions
+- Current: v12.15.4 (incompatible)
+- Latest: v14.4.34 (compatible with React Native 0.81.4)
+
+**Solution Implemented:**
+1. Updated react-native-iap: v12.15.4 → v14.4.34
+2. Regenerated package-lock.json (proper method)
+3. Verified npm ci works locally
+4. Incremented version to 1.0.5 (versionCode 6)
+
+**Files Modified:**
+- `package.json` - Updated react-native-iap to v14.4.34
+- `package-lock.json` - Regenerated
+- `app.json` - Incremented version to 1.0.5 (versionCode 6)
+
+**Build Attempt 8 Result:** ✅ **SUCCESS!**
+- **First successful APK build!**
+- All phases passed: npm ci, JavaScript bundling, Gradle build, Kotlin compilation
+- Build time: ~2-3 minutes
+- APK successfully installed on physical Android device
+- Build logs: https://expo.dev/accounts/berkay_kan/projects/translation-comparator-app/builds/9894dd1c-52ef-44ec-8da1-d56cf0377dc8
+
+---
+
+### **Part 3: Documentation Updates**
+
+**APK_BUILD_GUIDE.md:**
+- Complete rewrite - removed all build history and troubleshooting details
+- Now contains only the **proven working method**
+- Focused on future builds - Claude reads this file when building
+- Includes pre-build checklist and key files list
+- Documents critical versions: react-native-iap v14.4.34+
+
+**PROJECT_PLAN.md:**
+- Phase 7: Marked as COMPLETE ✅
+- Phase 8: Marked as IN PROGRESS ✅
+- Updated security section (apiKeys.js vs apiKeys.local.js)
+- Updated status to "Phase 8 (Testing & Deploy)"
+
+**PROJECT_RULES.md:**
+- Updated "Last Updated" to Session 11
+
+**SESSION_CHANGELOG.md:**
+- Added Session 11 complete summary
+
+---
+
+### **Progress:**
+
+**Completed:**
+- ✅ Fixed Gradle flavor ambiguity (custom Expo plugin)
+- ✅ Fixed Kotlin compilation error (updated react-native-iap)
+- ✅ **Successfully built APK!** (First successful build after 8 attempts)
+- ✅ APK installed on physical Android device
+- ✅ Cleaned up and finalized APK_BUILD_GUIDE.md
+- ✅ Updated all documentation files
+
+**Key Technical Achievements:**
+1. Created custom Expo config plugin for react-native-iap flavor selection
+2. Identified and fixed version incompatibility (react-native-iap v12 → v14)
+3. Established working build process (documented in APK_BUILD_GUIDE.md)
+
+**Build History Summary:**
+- Sessions 9-10: Attempts 1-6 (dependency, plugin, bundling, flavor issues)
+- Session 11: Attempts 7-8 (Kotlin error → SUCCESS!)
+- Total attempts: 8
+- Final working configuration established ✅
+
+**Still To Do (Session 12+):**
+- ❌ Test banner ads on device
+- ❌ Test interstitial ads on device
+- ❌ Test subscription purchase flow
+- ❌ Performance optimization
+- ❌ Final bug fixes
+- ❌ Prepare Play Store listing
+
+---
+
+**Status:** Phase 8 In Progress - APK Built Successfully! Ready for device testing.
+
+---
+
+## 🔄 **Next Session:**
+- Test monetization features on physical device (banner ads, interstitial ads, subscriptions)
+- Verify premium features unlock after purchase
+- Test restore purchases functionality
+- Fix any issues found during testing

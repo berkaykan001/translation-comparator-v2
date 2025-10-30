@@ -2,7 +2,7 @@
   "expo": {
     "name": "Translation Comparator",
     "slug": "translation-comparator-app",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.berkaykan.translationcomparator",
-      "versionCode": 4,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
@@ -39,6 +39,22 @@
         {
           "androidAppId": "ca-app-pub-7022168619359192~0000000000",
           "iosAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "",
+            "usesCleartextTraffic": false,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "36.0.0",
+            "kotlinVersion": "2.1.20",
+            "gradleProperties": {},
+            "extraMavenRepos": []
+          }
         }
       ]
     ],
